@@ -1,6 +1,9 @@
+# Survey microdata and anything derived from it (MoSPI terms of use)
 data/raw/**/*.csv
+data/raw/**/*.zip
 data/processed/*.csv
 outputs/*
-!outputs/.gitkeep
+!outputs/README.md
+# Python
 __pycache__/
 .venv/
