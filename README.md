@@ -5,7 +5,7 @@ hospitalisation episodes using the NSS 75th round (2017-18) health survey: 1,606
 (ailment code 13) among 93,925 hospitalisation records. RQ4 compares the CHE rate with the NSO 80th round
 (January-December 2025) survey: 3,283 cancer hospitalisations among 121,584 records.
 
-## 1. Get the data (free registration at https://microdata.gov.in)
+## 1. Get the data (register as research student at https://microdata.gov.in)
 1. **2017-18, catalog 152** (https://microdata.gov.in/NADA/index.php/catalog/152): download the CSV zip
    (`CSV_HSCH_75`) and copy these five files, unchanged, into `data/raw/nss75/`:
    `Block_3_Level_2_R75250L02.csv`, `Block_4_Level_3_R75250L03.csv`, `Block_6_Level_5_R75250L05.csv`,
@@ -16,8 +16,7 @@ hospitalisation episodes using the NSS 75th round (2017-18) health survey: 1,606
    2025 schedule), `b6i7` institution (1 public, 2 charitable, 3 private), `b7i12` medical total,
    `b7i15` total incl. non-medical, `b7i16` reimbursed, `b7i17` source of finance, `b7i18` place, `mult`
    weight; hhscsL1 `umce` monthly consumption, `hhsz`; keys `fsu, sd, sss, hhd`.
-3. Follow MoSPI's terms of use: no attempt to identify households; cite the datasets. Do not commit the
-   raw files to GitHub (they are git-ignored).
+3. Follow MoSPI's terms of use: no attempt to identify households, cite the datasets. 
 
 ## 2. Run
 ```bash
