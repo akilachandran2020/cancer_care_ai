@@ -1,2 +1,46 @@
-# cancer_care_ai
-Cancer Care AI companion for predicting financial risk and advice on Indian households cancer patients
+# AI Cancer Care Companion: predicting cancer treatment cost and financial risk (India)
+
+Predicts out-of-pocket expenditure (OOPE) and catastrophic health expenditure (CHE) risk for cancer
+hospitalisation episodes using the NSS 75th round (2017-18) health survey: 1,606 cancer hospitalisations
+(ailment code 13) among 93,925 hospitalisation records. RQ4 compares the CHE rate with the NSO 80th round
+(January-December 2025) survey: 3,283 cancer hospitalisations among 121,584 records.
+
+## 1. Get the data (free registration at https://microdata.gov.in)
+1. **2017-18, catalog 152** (https://microdata.gov.in/NADA/index.php/catalog/152): download the CSV zip
+   (`CSV_HSCH_75`) and copy these five files, unchanged, into `data/raw/nss75/`:
+   `Block_3_Level_2_R75250L02.csv`, `Block_4_Level_3_R75250L03.csv`, `Block_6_Level_5_R75250L05.csv`,
+   `Block_7_Level_6_R75250L06.csv`, `Block_7_Level_7_R75250L07.csv`.
+2. **2025, catalog 290** (https://microdata.gov.in/NADA/index.php/catalog/290): download the CSV zip
+   (`CSV_data_household_social_consumption_heaith_Jan_Dec25`) and copy `hhscsL1.csv` and `hhscsL4.csv`
+   into `data/raw/nss80/`. Field mapping used: hhscsL4 `b6i5` ailment (13 = cancer, to confirm against the
+   2025 schedule), `b6i7` institution (1 public, 2 charitable, 3 private), `b7i12` medical total,
+   `b7i15` total incl. non-medical, `b7i16` reimbursed, `b7i17` source of finance, `b7i18` place, `mult`
+   weight; hhscsL1 `umce` monthly consumption, `hhsz`; keys `fsu, sd, sss, hhd`.
+3. Follow MoSPI's terms of use: no attempt to identify households; cite the datasets. Do not commit the
+   raw files to GitHub (they are git-ignored).
+
+## 2. Run
+```bash
+python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cd src
+python 02_sample_size.py              # reproduces the synopsis sample-size table
+python 01_build_cancer_episodes.py    # -> data/processed/cancer_episodes_nss75.csv
+# set ROUND = "nss80" in config.py, rerun step 1 -> cancer_episodes_nss80.csv, set it back to "nss75"
+python 03_models_and_tests.py         # -> outputs/results.json (RQ1-RQ4), outputs/episode_predictions.csv
+# without cancer_episodes_nss80.csv, RQ4 runs the fallback (insured vs uninsured distress financing)
+python 04_export_for_spss.py          # -> outputs/spss/cancer_2017.sav, cancer_2017_2025.sav
+```
+
+## 3. SPSS (descriptives and RQ2-RQ4)
+Open `spss/rq2_rq4.sps` in IBM SPSS Statistics (27 or later; Complex Samples module for the weighted
+estimates), set the FILE HANDLE path to your `outputs/spss` folder, and run all. Welch's test is the
+"equal variances not assumed" row; the RQ4 two-proportion test is the Pearson chi-square (chi-square = z^2).
+`03_models_and_tests.py` reruns the same tests in Python as a cross-check. RQ1 (machine learning, SHAP,
+prediction intervals) runs in Python only.
+
+## 4. Smoke test
+`python 00_make_smoketest_data.py` writes clearly labelled SYNTHETIC files with the real column names so
+the pipeline can be tested before the download. Delete them before real analysis; never report them.
+
+Seed 42 throughout. Variable definitions: `data_dictionary.csv`.
