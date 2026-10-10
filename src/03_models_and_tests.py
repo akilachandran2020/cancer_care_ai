@@ -15,7 +15,7 @@ from config import PROCESSED, OUTPUTS, SEED
 warnings.filterwarnings("ignore")
 
 FEATS = ["age", "female", "sector_urban", "facility_public", "ward_type", "stay_days", "surgery_received",
-         "outside_district", "outside_state", "insured", "mpce_quintile", "social_group", "hh_size"]
+         "outside_district", "outside_state", "insured", "member_deceased", "mpce_quintile", "social_group", "hh_size"]
 
 def rq1(df):
     """Compare linear regression, random forest, gradient boosting (LightGBM) and XGBoost
