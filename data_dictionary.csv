@@ -2,15 +2,15 @@ variable,role,type,unit,source (file: variable),definition,relevance
 oop_medical,Dependent (RQ1 RQ3),Continuous,Rupees per episode,L06: Medical_expenditure_totalitem_Rs minus L07: Total_amount_reimbursed_by_medic,Out-of-pocket medical spending for the cancer hospitalisation after insurance or employer reimbursement,Cost the companion predicts
 log_oop,Dependent (modelling scale),Continuous,log(Rs + 1),Derived,Natural log of oop_medical + 1,Reduces skew for regression
 che,Dependent (RQ2 RQ4),Binary (0/1),—,Derived,1 if total out-of-pocket spending (medical + transport + other non-medical - reimbursement) exceeds 10% of annual household consumption,Catastrophic health expenditure flag
-distress_financing,Descriptive; RQ4 fallback,Binary (0/1),—,L07: Major_source_of_finance,1 if major source was borrowing (2) or sale of physical assets (3),Financial hardship
+distress_financing,Descriptive,Binary (0/1),—,L07: Major_source_of_finance,1 if major source was borrowing (2) or sale of physical assets (3),Financial hardship
 facility_public,Independent (RQ3),Binary (0/1),—,L05: Type_of_medical_institution,1 = government/public hospital; private = code 3; charitable/trust = code 2,Public vs private cost gap
-insured,Predictor; RQ4 fallback group,Binary (0/1),—,L03: covered_by_any_scheme_for_health,"1 if covered by a government-sponsored, employer or private health scheme (codes 1-4, 9); missing if the member died or left the household (serial 91/92)",Financial protection
+insured,Predictor; Figure 1,Binary (0/1),—,L03: covered_by_any_scheme_for_health; 2025: hhscsL2: b3c17,"1 if covered by a government-sponsored, employer or private health scheme (2017-18 codes 1-4, 9; 2025: any code except 19); missing if the member died or left the household (serial 91/92)",Financial protection
 ward_type,Independent,Categorical (3),—,L05: Type_of_ward,Free (1) paying general (2) paying special (3),Cost driver
 stay_days,Independent,Count,days,L05: Duration_of_stay_in_hospital_day,Length of hospital stay,Cost driver
 surgery_received,Independent,Binary (0/1),—,L05: Surgery,1 if surgery was received (free partly free or paid),Treatment intensity proxy
 outside_district / outside_state,Independent,Binary (0/1),—,L07: Place_of_hospitalisation_code,Treated outside home district (codes 3-5) / outside home state (code 5),Travel burden
 age,Independent,Continuous,years,L05: Age,Age of patient,Demographic
-female,Independent,Binary (0/1),—,L03: Gender,1 = female,Equity check
+female,Independent,Binary (0/1),—,L03: Gender; 2025: hhscsL2: b3c4,1 = female,Equity check
 sector_urban,Independent,Binary (0/1),—,L05: Sector,1 = urban,Rural-urban gap
 social_group,Independent,Categorical (4),—,L02: Social_group,ST (1) SC (2) OBC (3) Others (9),Equity check
 mpce_quintile,Independent,Ordinal (1-5),—,Derived from L02: Household_usual_consumer_expendi / Household_size,Household monthly per-capita consumption quintile,Ability to pay
@@ -21,4 +21,4 @@ weight,Survey weight,Continuous,—,MULT NSS NSC (all levels),MULT/100 if NSS = 
 pred_oop / pi_low / pi_high,Model output,Continuous,Rupees,Derived,Predicted cost and 80% prediction interval per episode,Companion output
 survey_2025,Grouping (RQ4),Binary (0/1),—,Derived,1 for 2025 (NSO 80th round) episodes; 0 for 2017-18,Before vs after PM-JAY
 che (2025 file),Dependent (RQ4),Binary (0/1),—,hhscsL4: b7i15 - b7i16 vs hhscsL1: umce x 12,1 if 2025 total out-of-pocket spending exceeds 10% of annual household consumption,CHE in 2025
-member_deceased,Predictor (missing-data indicator),Binary (0/1),—,L05: Srl_no_of_member_hospitalised,1 if the hospitalised member had died or left the household (serial 91 or 92); coverage and sex not recorded,Handles missing person-level data
+member_deceased,Predictor (missing-data indicator),Binary (0/1),—,L05: Srl_no_of_member_hospitalised; 2025: hhscsL4: b6i2,1 if the hospitalised member had died or left the household (serial 91 or 92); coverage and sex not recorded,Handles missing person-level data

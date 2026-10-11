@@ -11,11 +11,13 @@ hospitalisation episodes using the NSS 75th round (2017-18) health survey: 1,606
    `Block_3_Level_2_R75250L02.csv`, `Block_4_Level_3_R75250L03.csv`, `Block_6_Level_5_R75250L05.csv`,
    `Block_7_Level_6_R75250L06.csv`, `Block_7_Level_7_R75250L07.csv`.
 2. **2025, catalog 290** (https://microdata.gov.in/NADA/index.php/catalog/290): download the CSV zip
-   (`CSV_data_household_social_consumption_heaith_Jan_Dec25`) and copy `hhscsL1.csv` and `hhscsL4.csv`
-   into `data/raw/nss80/`. Field mapping used: hhscsL4 `b6i5` ailment (13 = cancer, to confirm against the
+   (`CSV_data_household_social_consumption_heaith_Jan_Dec25`) and copy `hhscsL1.csv`, `hhscsL2.csv` and
+   `hhscsL4.csv` into `data/raw/nss80/`. Field mapping used: hhscsL4 `b6i5` ailment (13 = cancer, to confirm against the
    2025 schedule), `b6i7` institution (1 public, 2 charitable, 3 private), `b7i12` medical total,
    `b7i15` total incl. non-medical, `b7i16` reimbursed, `b7i17` source of finance, `b7i18` place, `mult`
-   weight; hhscsL1 `umce` monthly consumption, `hhsz`; keys `fsu, sd, sss, hhd`.
+   weight, `b6i2` serial of the member hospitalised (91/92 = died or left); hhscsL1 `umce` monthly consumption,
+   `hhsz`; hhscsL2 `b3c1` member serial, `b3c4` sex, `b3c17` health-expenditure scheme (19 = not covered);
+   keys `fsu, sd, sss, hhd`.
 3. Follow MoSPI's terms of use: no attempt to identify households, cite the datasets. 
 
 ## 2. Run
@@ -27,8 +29,9 @@ python 02_sample_size.py              # reproduces the synopsis sample-size tabl
 python 01_build_cancer_episodes.py    # -> data/processed/cancer_episodes_nss75.csv
 # set ROUND = "nss80" in config.py, rerun step 1 -> cancer_episodes_nss80.csv, set it back to "nss75"
 python 03_models_and_tests.py         # -> outputs/results.json (RQ1-RQ4), outputs/episode_predictions.csv
-# without cancer_episodes_nss80.csv, RQ4 runs the fallback (insured vs uninsured distress financing)
+# RQ4 needs cancer_episodes_nss80.csv; without it, RQ4 is skipped with a message
 python 04_export_for_spss.py          # -> outputs/spss/cancer_2017.sav, cancer_2017_2025.sav
+python 05_figure1_coverage.py         # -> outputs/figure1_coverage.csv/.png (synopsis Figure 1)
 ```
 
 ## 3. SPSS (descriptives and RQ2-RQ4)
