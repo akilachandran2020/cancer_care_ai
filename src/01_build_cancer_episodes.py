@@ -1,5 +1,5 @@
 """Step 1 - Build one row per cancer hospitalisation episode.
-ROUND = "nss75": 2017-18 levels 2, 3, 5, 6, 7 (all RQs).  ROUND = "nss80": 2025 files hhscsL1 + hhscsL4 (RQ4)."""
+ROUND = "nss75": 2017-18 levels 2, 3, 5, 6, 7 (all RQs).  ROUND = "nss80": 2025 files hhscsL1 + hhscsL2 + hhscsL4 (RQ4, Figure 1)."""
 import numpy as np, pandas as pd
 from config import ROUND, RAW, PROCESSED, FILES, FILES80, HH_KEY, HH_KEY80, CASE_KEY, CANCER_CODE, CHE_THRESHOLD
 
@@ -15,16 +15,25 @@ def num(s):
 def build_nss80():
     """2025 survey. Field mapping (hhscsL4): b6i5 ailment (13 = cancer, same list as 2017-18), b6i7 institution
     (1 public, 2 charitable/NGO, 3 private), b6i3 age, b7i12 total medical, b7i15 total incl. non-medical,
-    b7i16 reimbursed, b7i17 major source of finance, b7i18 place; hhscsL1: umce (monthly consumption), hhsz."""
-    hosp, hh = load("hosp"), load("hh")
-    for d in (hosp, hh):
+    b7i16 reimbursed, b7i17 major source of finance, b7i18 place, b6i2 serial of member hospitalised (91/92 = died
+    or left); hhscsL1: umce (monthly consumption), hhsz; hhscsL2 (household members): b3c1 member serial, b3c4 sex,
+    b3c17 health-expenditure scheme (19 = not covered; reproduces NSO's published 47.4% rural / 44.3% urban)."""
+    hosp, hh, person = load("hosp"), load("hh"), load("person")
+    for d in (hosp, hh, person):
         for c in HH_KEY80:
             d[c] = d[c].astype(str).str.strip()
-    hosp = hosp[num(hosp["b6i5"]) == CANCER_CODE]
-    ep = hosp.merge(hh[HH_KEY80 + ["hhsz", "b5i3", "umce"]], on=HH_KEY80, how="left")
+    hosp = hosp[num(hosp["b6i5"]) == CANCER_CODE].copy()
+    hosp["member"], person["member"] = num(hosp["b6i2"]), num(person["b3c1"])
+    ep = (hosp.merge(hh[HH_KEY80 + ["hhsz", "b5i3", "umce"]], on=HH_KEY80, how="left")
+              .merge(person[HH_KEY80 + ["member", "b3c4", "b3c17"]], on=HH_KEY80 + ["member"], how="left"))
+    assert len(ep) == len(hosp), "member merge duplicated episodes - check keys"
     out = pd.DataFrame({
         "sector_urban": (num(ep["sec"]) == 2).astype(int),
         "age": num(ep["b6i3"]),
+        "female": np.where(num(ep["b3c4"]).isna(), np.nan, (num(ep["b3c4"]) == 2).astype(float)),
+        # members who died or left (91/92) have no hhscsL2 record, so coverage is unknown (NaN), as in 2017-18
+        "insured": np.where(num(ep["b3c17"]).isna(), np.nan, (num(ep["b3c17"]) != 19).astype(float)),
+        "member_deceased": ep["member"].isin([91, 92]).astype(int),
         "social_group": num(ep["b5i3"]),
         "hh_size": num(ep["hhsz"]),
         "hh_monthly_consumption": num(ep["umce"]),

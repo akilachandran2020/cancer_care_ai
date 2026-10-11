@@ -1,5 +1,5 @@
 """Step 3 - Expense-prediction engine (RQ1), catastrophic-spending drivers (RQ2),
-public vs private cost (RQ3), CHE in 2017-18 vs 2025 (RQ4; fallback: insured vs uninsured distress financing), fairness audit."""
+public vs private cost (RQ3), CHE in 2017-18 vs 2025 (RQ4), fairness audit."""
 import json, warnings
 import numpy as np, pandas as pd
 from scipy import stats
@@ -68,8 +68,7 @@ def rq3(df):
             "cohen_d": (pvt.mean() - pub.mean()) / sd, "mann_whitney_p": stats.mannwhitneyu(pub, pvt).pvalue}
 
 def rq4(df):
-    """CHE rate, 2017-18 (nss75) vs 2025 (nss80). Falls back to insured vs uninsured distress financing
-    within 2017-18 if the 2025 episode file has not been built yet."""
+    """CHE rate, 2017-18 (nss75) vs 2025 (nss80). Needs cancer_episodes_nss80.csv (README step 2)."""
     f80 = PROCESSED / "cancer_episodes_nss80.csv"
     if f80.exists():
         d80 = pd.read_csv(f80).dropna(subset=["che"])
@@ -81,12 +80,7 @@ def rq4(df):
                 "che_2017": g.loc[0, "sum"] / g.loc[0, "count"], "che_2025": g.loc[1, "sum"] / g.loc[1, "count"],
                 "z": z, "p": p, "adjusted_or_2025": float(np.exp(adj.params["survey_2025"])),
                 "adjusted_p": float(adj.pvalues["survey_2025"])}
-    g = df.groupby("insured")["distress_financing"].agg(["sum", "count"])
-    z, p = proportions_ztest(g["sum"].values, g["count"].values)
-    return {"test": "FALLBACK distress financing, insured vs uninsured (2025 file not found)",
-            "n_insured": int(g.loc[1, "count"]), "n_uninsured": int(g.loc[0, "count"]),
-            "p_distress_insured": g.loc[1, "sum"] / g.loc[1, "count"],
-            "p_distress_uninsured": g.loc[0, "sum"] / g.loc[0, "count"], "z": z, "p": p}
+    return {"test": "RQ4 not run: build cancer_episodes_nss80.csv first (set ROUND = 'nss80' and rerun step 1)"}
 
 def fairness(df):
     df = df.assign(abs_err=np.abs(np.log1p(df["pred_oop"]) - df["log_oop"]),

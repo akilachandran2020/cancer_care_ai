@@ -13,7 +13,7 @@ FILES = {"hh": "Block_3_Level_2_R75250L02", "person": "Block_4_Level_3_R75250L03
          "hosp": "Block_6_Level_5_R75250L05", "exp1": "Block_7_Level_6_R75250L06",
          "exp2": "Block_7_Level_7_R75250L07"}
 # 2025 (catalog 290, zip CSV_data_household_social_consumption_heaith_Jan_Dec25): save in data/raw/nss80/
-FILES80 = {"hh": "hhscsL1", "hosp": "hhscsL4"}
+FILES80 = {"hh": "hhscsL1", "person": "hhscsL2", "hosp": "hhscsL4"}
 HH_KEY80 = ["fsu", "sd", "sss", "hhd"]
 
 HH_KEY = ["FSU", "Hamlet_Sub_block", "Second_stage_stratum", "Sample_hhld"]
