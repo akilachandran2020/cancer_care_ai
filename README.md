@@ -34,7 +34,7 @@ python 04_export_for_spss.py          # -> outputs/spss/cancer_2017.sav, cancer_
 python 05_figure1_coverage.py         # -> outputs/figure1_coverage.csv/.png (synopsis Figure 1)
 ```
 
-## 3. SPSS (descriptives and RQ2-RQ4)
+## 3. SPSS (descriptives and RQ2-RQ4) - work in progress!
 Open `spss/rq2_rq4.sps` in IBM SPSS Statistics (27 or later; Complex Samples module for the weighted
 estimates), set the FILE HANDLE path to your `outputs/spss` folder, and run all. Welch's test is the
 "equal variances not assumed" row; the RQ4 two-proportion test is the Pearson chi-square (chi-square = z^2).
