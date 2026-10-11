@@ -42,7 +42,10 @@ def rq1(df):
     err = {k: np.abs(y - p) for k, p in pred.items()}
     scores = {k: {"mae_log": float(e.mean()), "rmse_log": float(np.sqrt(np.mean((y - pred[k]) ** 2))),
                   "r2": float(1 - np.sum((y - pred[k]) ** 2) / np.sum((y - y.mean()) ** 2))} for k, e in err.items()}
+    for k in scores:   # MAE back-transformed to rupees for interpretation (synopsis: Evaluation Metrics)
+        scores[k]["mae_rupees"] = float(np.mean(np.abs(np.expm1(y) - np.expm1(pred[k]))))
     best = min((k for k in models if k != "linear"), key=lambda k: scores[k]["mae_log"])
+    improvement = (scores["linear"]["mae_log"] - scores[best]["mae_log"]) / scores["linear"]["mae_log"] * 100  # Table 5, log scale
     d = err[best] - err["linear"]
     t = stats.ttest_rel(err[best], err["linear"])
     # SHAP-style contributions from the XGBoost model fitted on all episodes
@@ -51,7 +54,8 @@ def rq1(df):
     importance = dict(sorted(zip(FEATS, np.abs(contrib).mean(0).round(4)), key=lambda kv: -kv[1]))
     df = df.assign(pred_oop=np.expm1(pred[best]), pi_low=np.expm1(lo), pi_high=np.expm1(hi))
     cover = float(np.mean((y >= lo) & (y <= hi)))
-    return df, {"scores": scores, "best_ml": best, "t": t.statistic, "p": t.pvalue, "dz": d.mean() / d.std(),
+    return df, {"scores": scores, "best_ml": best, "mae_improvement_pct": float(improvement),
+                "meets_10pct_target": bool(improvement >= 10), "t": t.statistic, "p": t.pvalue, "dz": d.mean() / d.std(),
                 "wilcoxon_p": stats.wilcoxon(d).pvalue, "pi80_coverage": cover, "mean_abs_shap": importance}
 
 def rq2(df):
@@ -95,7 +99,7 @@ def main():
     df.to_csv(OUTPUTS / "episode_predictions.csv", index=False)
     json.dump(out, open(OUTPUTS / "results.json", "w"), indent=2, default=float)
     print(json.dumps({"n": out["n"], "best": r1["best_ml"], "scores": r1["scores"], "rq1_p": r1["p"], "pi80": r1["pi80_coverage"], "rq3_d": out["rq3"]["cohen_d"],
-                      "rq4_p": out["rq4"]["p"], "che_rate": out["weighted_che_rate"]}, indent=1, default=float))
+                      "mae_improvement_pct": r1["mae_improvement_pct"], "rq4_p": out["rq4"].get("p"), "che_rate": out["weighted_che_rate"]}, indent=1, default=float))
 
 if __name__ == "__main__":
     main()
