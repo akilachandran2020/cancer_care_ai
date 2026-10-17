@@ -1,0 +1,15 @@
+,n_missing,pct_missing
+oop_medical,0,0.0
+oop_total,0,0.0
+stay_days,0,0.0
+age,0,0.0
+female,363,22.6
+insured,363,22.6
+ward_type,0,0.0
+social_group,0,0.0
+hh_size,0,0.0
+hh_monthly_consumption,0,0.0
+transport_exp,19,1.18
+other_nonmed_exp,51,3.18
+major_finance,0,0.0
+place_code,0,0.0

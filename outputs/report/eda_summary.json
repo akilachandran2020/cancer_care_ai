@@ -1,0 +1,27 @@
+{
+  "n_episodes_2017": 1606,
+  "n_hospitalisation_records_2017": 93925,
+  "duplicate_case_keys_2017": 0,
+  "duplicate_full_rows_2017": 0,
+  "member_deceased_n": 363,
+  "zero_oop_medical_n": 140,
+  "zero_oop_by_facility": {
+    "Public": 88,
+    "Private": 46,
+    "Charitable/NGO": 6
+  },
+  "outliers_raw_iqr3_n": 89,
+  "outliers_log_iqr1.5_n": 159,
+  "stay_days_over_90_n": 20,
+  "skew_raw": 15.196459379968932,
+  "skew_log": -1.9259887040105417,
+  "che_rate_unweighted": 0.7042341220423413,
+  "che_rate_weighted": 0.6306749172878673,
+  "distress_financing_rate": 0.18804483188044832,
+  "median_oop": 25000.0,
+  "mean_oop": 66910.82876712328,
+  "n_episodes_2025": 3283,
+  "che_rate_2025_unweighted": 0.5936643314042035,
+  "che_rate_2025_weighted": 0.5269510152336072,
+  "median_oop_2025": 22550.0
+}

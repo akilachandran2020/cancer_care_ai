@@ -1,0 +1,23 @@
+variable,level,n,pct,median_oop,che_pct,che_pct_weighted,distress_pct
+facility_type,Public,651,40.5,9950,56.8,43.2,18.3
+facility_type,Charitable/NGO,87,5.4,20500,58.6,53.8,16.1
+facility_type,Private,868,54.0,42000,81.8,81.5,19.5
+sector_urban,Rural,881,54.9,22300,75.0,67.5,22.2
+sector_urban,Urban,725,45.1,28300,64.8,55.6,14.6
+female,Male,578,36.0,22280,67.3,54.2,16.6
+female,Female,665,41.4,22300,68.4,60.7,17.0
+insured,Not covered,883,55.0,30000,75.5,66.6,18.0
+insured,Covered,360,22.4,8500,49.2,36.1,13.9
+mpce_quintile,1,322,20.0,25500,81.4,68.8,26.1
+mpce_quintile,2,321,20.0,20000,79.1,73.2,21.5
+mpce_quintile,3,321,20.0,23350,66.7,58.9,23.1
+mpce_quintile,4,321,20.0,29500,64.8,62.8,16.2
+mpce_quintile,5,321,20.0,31200,60.1,52.2,7.2
+social_group,ST,105,6.5,26250,71.4,35.3,21.9
+social_group,SC,269,16.7,20000,75.1,57.8,25.3
+social_group,OBC,612,38.1,25000,71.7,65.6,19.1
+social_group,Others,620,38.6,28100,66.9,68.8,15.2
+surgery_received,No,886,55.2,17352,62.5,53.1,15.9
+surgery_received,Yes,720,44.8,39825,80.1,74.8,22.4
+outside_state,Home state,1370,85.3,21200,68.6,61.4,18.1
+outside_state,Other state,236,14.7,45300,80.9,78.6,22.9

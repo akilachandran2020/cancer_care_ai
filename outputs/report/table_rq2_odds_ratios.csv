@@ -1,0 +1,16 @@
+,odds_ratio,p
+C(mpce_quintile)[T.2],1.0435,0.8663
+C(mpce_quintile)[T.3],0.4741,0.0023
+C(mpce_quintile)[T.4],0.4779,0.0035
+C(mpce_quintile)[T.5],0.3734,0.0002
+C(social_group)[T.2],0.8771,0.7106
+C(social_group)[T.3],0.8228,0.5471
+C(social_group)[T.9],0.7469,0.3644
+age,0.9941,0.1755
+female,0.8944,0.4413
+sector_urban,0.9355,0.6866
+facility_public,0.2114,0.0
+stay_days,1.0621,0.0
+surgery_received,1.6884,0.0005
+outside_state,2.0678,0.0013
+insured,0.2845,0.0

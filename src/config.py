@@ -1,7 +1,7 @@
 """Configuration for the AI Cancer Care Companion analysis (NSS 75th round, Schedule 25.0)."""
 import pathlib
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-ROUND = "nss75"            # set to "nss80" to build the 2025 episode file for RQ4 (2025 field mapping: see README)
+ROUND = "nss80"            # set to "nss80" to build the 2025 episode file for RQ4 (2025 field mapping: see README)
 RAW = ROOT / "data/raw" / ROUND
 PROCESSED = ROOT / "data/processed"
 OUTPUTS = ROOT / "outputs"
