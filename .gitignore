@@ -1,9 +1,14 @@
-# Survey microdata and anything derived from it (MoSPI terms of use)
+# Survey microdata and episode-level files derived from it are NEVER published (MoSPI terms of use)
 data/raw/**/*.csv
 data/raw/**/*.zip
 data/processed/*.csv
 outputs/*
 !outputs/README.md
+# Aggregate results only (no episode rows) - safe to publish
+!outputs/results.json
+!outputs/figure1_coverage.csv
+!outputs/figure1_coverage.png
+!outputs/report/
 # Python
 __pycache__/
 .venv/

@@ -1,0 +1,24 @@
+# Runs the whole pipeline on SYNTHETIC data on every push, to prove the code works.
+# The real MoSPI microdata is never uploaded to GitHub, so real results are produced on your laptop.
+name: Pipeline smoke test
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt matplotlib
+      - name: Run pipeline on synthetic data
+        working-directory: src
+        run: |
+          python 00_make_smoketest_data.py
+          python 02_sample_size.py
+          python 01_build_cancer_episodes.py
+          python 03_models_and_tests.py
+          python 06_report_outputs.py
