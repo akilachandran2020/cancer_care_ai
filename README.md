@@ -32,6 +32,10 @@ python 03_models_and_tests.py         # -> outputs/results.json (RQ1-RQ4), outpu
 # RQ4 needs cancer_episodes_nss80.csv; without it, RQ4 is skipped with a message
 python 04_export_for_spss.py          # -> outputs/spss/cancer_2017.sav, cancer_2017_2025.sav
 python 05_figure1_coverage.py         # -> outputs/figure1_coverage.csv/.png (synopsis Figure 1)
+python 06_report_outputs.py           # -> outputs/report/ (cleaning log, EDA tables, report figures)
+python 07_rerun_2025.py               # robustness check: RQ1-RQ3 on 2025 vs 2017-18, shared features
+# -> outputs/results_2025.json, outputs/report/table_rerun_2025.csv, table_rq2_or_by_round.csv
+# 2025 has no ward type, length of stay or surgery fields, so both rounds are refit on the 11 shared features
 ```
 
 ## 3. SPSS (descriptives and RQ2-RQ4) - work in progress!
