@@ -21,6 +21,10 @@ def load(round_):
         raise SystemExit(f"Missing {f.name}: set ROUND = '{round_}' in config.py and rerun 01_build_cancer_episodes.py")
     return pd.read_csv(f).dropna(subset=["log_oop", "annual_consumption"])
 
+def shared_features(d80):
+    """Study features that exist (and are not all missing) in the 2025 episode file."""
+    return [f for f in m.FEATS if f in d80.columns and d80[f].notna().any()]
+
 def run(df, feats):
     df, r1 = m.rq1(df, feats)
     out = {"n": len(df), "rq1": r1, "rq2": m.rq2(df, feats), "rq3": m.rq3(df), "fairness": m.fairness(df),
@@ -49,7 +53,7 @@ def summary_rows(label, r):
 
 def main():
     d75, d80 = load("nss75"), load("nss80")
-    common = [f for f in m.FEATS if f in d80.columns and d80[f].notna().any()]
+    common = shared_features(d80)
     dropped = [f for f in m.FEATS if f not in common]
     print(f"Shared features ({len(common)}): {common}\nNot in the 2025 file: {dropped}")
 

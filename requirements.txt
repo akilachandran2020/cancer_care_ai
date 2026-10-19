@@ -7,3 +7,4 @@ lightgbm>=4.0
 xgboost>=2.0
 pyreadstat>=1.2
 matplotlib>=3.7
+pytest>=7.0

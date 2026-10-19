@@ -45,7 +45,13 @@ estimates), set the FILE HANDLE path to your `outputs/spss` folder, and run all.
 `03_models_and_tests.py` reruns the same tests in Python as a cross-check. RQ1 (machine learning, SHAP,
 prediction intervals) runs in Python only.
 
-## 4. Smoke test
+## 4. Unit tests
+`python -m pytest -q` (from the repository root) runs 14 tests in `tests/` on small synthetic tables: the CHE
+threshold, OOPE clipping, missing coverage for members who died or left, place-of-treatment flags, survey weights,
+no cost columns among the model features, the RQ2 model, the Welch degrees of freedom and the 2025 shared-feature
+selection. They never read the survey microdata.
+
+## 5. Smoke test
 `python 00_make_smoketest_data.py` writes clearly labelled SYNTHETIC files with the real column names so
 the pipeline can be tested before the download. Delete them before real analysis; never report them.
 
