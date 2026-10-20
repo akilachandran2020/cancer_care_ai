@@ -148,3 +148,8 @@ def test_shared_features_drop_fields_missing_in_2025(rerun, models, episodes):
     d80["hh_size"] = np.nan                                           # a column that exists but is empty is dropped too
     shared = rerun.shared_features(d80)
     assert shared == [f for f in models.FEATS if f not in ("ward_type", "stay_days", "surgery_received", "hh_size")]
+
+def test_rq2_confidence_intervals_bracket_odds_ratios(models, episodes):
+    r = models.rq2(episodes)
+    for term, orv in r["odds_ratios"].items():
+        assert r["ci_low"][term] < orv < r["ci_high"][term]

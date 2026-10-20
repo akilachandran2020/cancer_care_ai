@@ -66,7 +66,9 @@ def rq1(df, feats=FEATS):
 def rq2(df, feats=FEATS):
     terms = [t for t in RQ2_TERMS if t.removeprefix("C(").removesuffix(")") in feats]
     m = smf.logit("che ~ " + " + ".join(terms), data=df.dropna(subset=feats)).fit(disp=0)
-    return {"n": int(m.nobs), "odds_ratios": np.exp(m.params).to_dict(), "p": m.pvalues.to_dict(), "pseudo_r2": m.prsquared}
+    ci = np.exp(m.conf_int())                                                  # 95% CI on the odds-ratio scale
+    return {"n": int(m.nobs), "odds_ratios": np.exp(m.params).to_dict(), "p": m.pvalues.to_dict(), "pseudo_r2": m.prsquared,
+            "ci_low": ci[0].to_dict(), "ci_high": ci[1].to_dict()}
 
 def rq3(df):
     pub, pvt = df.loc[df["facility_type"] == 1, "log_oop"], df.loc[df["facility_type"] == 3, "log_oop"]

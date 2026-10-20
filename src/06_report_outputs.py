@@ -17,6 +17,21 @@ plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 10, "axes.spines
 def save(fig, name):
     fig.tight_layout(); fig.savefig(OUT / f"{name}.png"); plt.close(fig)
 
+LABEL = {"log_oop": "ln(OOPE + 1)", "stay_days": "Length of stay", "age": "Age", "hh_size": "Household size",
+         "mpce_quintile": "MPCE quintile", "facility_public": "Public hospital", "surgery_received": "Surgery",
+         "insured": "Scheme coverage", "outside_state": "Outside home state", "outside_district": "Outside home district",
+         "che": "CHE", "ward_type": "Ward type", "female": "Female", "member_deceased": "Died or left household",
+         "sector_urban": "Urban", "social_group": "Social group"}
+RUPEE_TICKS = [(0, "0"), (100, "Rs 100"), (1e3, "Rs 1k"), (1e4, "Rs 10k"), (1e5, "Rs 1 lakh"), (1e6, "Rs 10 lakh")]
+
+def rupee_axis(ax, which="x"):
+    """Second axis that labels ln(OOPE + 1) values in rupees, so log units are readable."""
+    sec = ax.secondary_xaxis("top") if which == "x" else ax.secondary_yaxis("right")
+    pos, lab = [np.log1p(v) for v, _ in RUPEE_TICKS], [l for _, l in RUPEE_TICKS]
+    (sec.set_xticks if which == "x" else sec.set_yticks)(pos, lab)
+    sec.tick_params(labelsize=7, colors="#404040")
+    return sec
+
 def wmean(x, w):
     m = x.notna() & w.notna()
     return float(np.average(x[m], weights=w[m]))
@@ -68,15 +83,22 @@ summary["median_oop"], summary["mean_oop"] = float(d["oop_medical"].median()), f
 
 # ---------- Figures ----------
 fig, ax = plt.subplots(1, 2, figsize=(7.5, 3.2))
-ax[0].hist(d["oop_medical"] / 1000, bins=50, color=BLUE); ax[0].set(xlabel="OOPE per episode (Rs thousand)", ylabel="Episodes", title="A. Raw scale")
-ax[1].hist(d["log_oop"], bins=40, color=BLUE); ax[1].set(xlabel="ln(OOPE + 1)", ylabel="Episodes", title="B. Log scale")
+CAP = 500  # Rs thousand; the axis is cut at Rs 5 lakh so the bulk of the distribution is visible
+above = int((d["oop_medical"] / 1000 > CAP).sum())
+ax[0].hist((d["oop_medical"] / 1000).clip(upper=CAP + 10), bins=np.arange(0, CAP + 20, 10), color=BLUE)
+ax[0].set(xlabel="OOPE per episode (Rs thousand; Rs 10k bins)", ylabel="Episodes", title="A. Raw scale", xlim=(0, CAP + 20))
+ax[0].annotate(f"{above} episodes above\nRs 5 lakh (max Rs {d['oop_medical'].max() / 1e5:.1f} lakh)\nshown in the last bar",
+               xy=(CAP + 5, 5), xytext=(CAP * .55, ax[0].get_ylim()[1] * .55), fontsize=7, arrowprops=dict(arrowstyle="->", lw=.7))
+ax[1].hist(d["log_oop"], bins=40, color=BLUE); ax[1].set(xlabel="ln(OOPE + 1)", ylabel="Episodes", title="B. Log scale (all episodes)")
+rupee_axis(ax[1], "x")
 save(fig, "fig2_oope_distribution")
 
 fig, ax = plt.subplots(figsize=(6, 3.4))
 groups = [d.loc[d.facility_type == k, "log_oop"] for k in FAC]
 ax.boxplot(groups, tick_labels=[f"{v}\n(n={len(g)})" for v, g in zip(FAC.values(), groups)], patch_artist=True,
            boxprops=dict(facecolor="#BDD7EE"), medianprops=dict(color=ORANGE, lw=2))
-ax.set(ylabel="ln(OOPE + 1)", title="OOPE by type of hospital, 2017-18")
+ax.set(xlabel="Hospital type", ylabel="ln(OOPE + 1)", title="OOPE by type of hospital, 2017-18")
+rupee_axis(ax, "y")
 save(fig, "fig3_log_oope_by_facility")
 
 fig, ax = plt.subplots(figsize=(6, 3.4))
@@ -88,11 +110,13 @@ save(fig, "fig4_che_by_quintile")
 
 fig, ax = plt.subplots(figsize=(6, 3.4))
 t = d.groupby(["facility_type", "insured"])["che"].mean().unstack() * 100
+tn = d.groupby(["facility_type", "insured"])["che"].size().unstack()
 x = np.arange(len(t)); w = .38
 for i, (col, colr, lab) in enumerate([(0.0, GREY, "Not covered"), (1.0, BLUE, "Covered by a scheme")]):
     if col in t:
-        bb = ax.bar(x + (i - .5) * w, t[col].values, w, color=colr, label=lab); ax.bar_label(bb, fmt="%.0f%%", fontsize=8)
-ax.set_xticks(x, [FAC[k] for k in t.index]); ax.set(ylabel="Episodes with CHE (%)", ylim=(0, 100))
+        bb = ax.bar(x + (i - .5) * w, t[col].values, w, color=colr, label=lab)
+        ax.bar_label(bb, labels=[f"{v:.0f}%\nn={k}" for v, k in zip(t[col].values, tn[col].values)], fontsize=7)
+ax.set_xticks(x, [FAC[k] for k in t.index]); ax.set(xlabel="Hospital type", ylabel="Episodes with CHE (%)", ylim=(0, 105))
 ax.set_title("CHE by hospital type and scheme coverage", pad=24)
 ax.legend(frameon=False, ncol=2, loc="lower center", bbox_to_anchor=(0.5, 1.0))
 save(fig, "fig5_che_by_facility_insurance")
@@ -123,10 +147,12 @@ corr_cols = ["log_oop", "stay_days", "age", "hh_size", "mpce_quintile", "facilit
 c = d[corr_cols].corr(method="spearman")
 c.round(3).to_csv(OUT / "table_spearman.csv")
 fig, ax = plt.subplots(figsize=(6.5, 5.5))
-im = ax.imshow(c, cmap="RdBu_r", vmin=-1, vmax=1)
-ax.set_xticks(range(len(c)), c.columns, rotation=45, ha="right"); ax.set_yticks(range(len(c)), c.columns)
+lower = c.where(np.tril(np.ones(c.shape, dtype=bool)))   # lower triangle only: each pair shown once
+im = ax.imshow(lower, cmap="RdBu_r", vmin=-1, vmax=1)
+names_c = [LABEL.get(k, k) for k in c.columns]
+ax.set_xticks(range(len(c)), names_c, rotation=45, ha="right"); ax.set_yticks(range(len(c)), names_c)
 for i in range(len(c)):
-    for j in range(len(c)): ax.text(j, i, f"{c.iloc[i, j]:.2f}", ha="center", va="center", fontsize=7)
+    for j in range(i + 1): ax.text(j, i, f"{c.iloc[i, j]:.2f}", ha="center", va="center", fontsize=7)
 fig.colorbar(im, ax=ax, shrink=.8, label="Spearman rho"); ax.set_title("Spearman correlations among key variables")
 save(fig, "fig7_correlation")
 
@@ -136,12 +162,13 @@ sc = pd.DataFrame(r["rq1"]["scores"]).T.round(4); sc.to_csv(OUT / "table_rq1_mod
 fig, ax = plt.subplots(figsize=(6, 3.2))
 names = {"linear": "Linear (baseline)", "random_forest": "Random forest", "lightgbm": "LightGBM", "xgboost": "XGBoost"}
 bb = ax.bar([names[k] for k in sc.index], sc["mae_log"], color=[GREY] + [BLUE] * (len(sc) - 1))
-ax.bar_label(bb, fmt="%.3f"); ax.set(ylabel="MAE, ln(OOPE + 1)", title="RQ1: five-fold cross-validated MAE by model")
+ax.bar_label(bb, fmt="%.3f"); ax.set(xlabel="Model", ylabel="MAE, ln(OOPE + 1)", title="RQ1: five-fold cross-validated MAE by model")
 save(fig, "fig8_rq1_mae")
-imp = pd.Series(r["rq1"]["mean_abs_shap"]).sort_values()
+imp = pd.Series(r["rq1"]["mean_abs_shap"]).sort_values().rename(index=LABEL)
 fig, ax = plt.subplots(figsize=(6, 4)); ax.barh(imp.index, imp.values, color=BLUE)
 ax.set(xlabel="Mean |SHAP| on ln(OOPE + 1)", title="RQ1: XGBoost feature importance"); save(fig, "fig9_shap")
-orr = pd.DataFrame({"odds_ratio": r["rq2"]["odds_ratios"], "p": r["rq2"]["p"]}).drop(index="Intercept")
+orr = pd.DataFrame({"odds_ratio": r["rq2"]["odds_ratios"], "p": r["rq2"]["p"],
+                    "ci_low": r["rq2"].get("ci_low"), "ci_high": r["rq2"].get("ci_high")}).drop(index="Intercept")
 orr.round(4).to_csv(OUT / "table_rq2_odds_ratios.csv")
 fig, ax = plt.subplots(figsize=(6, 4.5))
 PRETTY = {"age": "Age (per year)", "female": "Female", "sector_urban": "Urban", "facility_public": "Public hospital",
@@ -150,10 +177,15 @@ PRETTY = {"age": "Age (per year)", "female": "Female", "sector_urban": "Urban", 
           "C(mpce_quintile)[T.4]": "MPCE Q4 (vs Q1)", "C(mpce_quintile)[T.5]": "MPCE Q5 (vs Q1)", "C(social_group)[T.2]": "SC (vs ST)",
           "C(social_group)[T.3]": "OBC (vs ST)", "C(social_group)[T.9]": "Others (vs ST)"}
 o = orr.sort_values("odds_ratio").rename(index=PRETTY)
-ax.scatter(o["odds_ratio"], o.index, color=[ORANGE if p < .05 else GREY for p in o["p"]])
+cols = [ORANGE if p < .05 else GREY for p in o["p"]]
+if o["ci_low"].notna().all():   # 95% confidence intervals (needs results.json from the updated step 3)
+    ax.errorbar(o["odds_ratio"], o.index, xerr=[o["odds_ratio"] - o["ci_low"], o["ci_high"] - o["odds_ratio"]],
+                fmt="none", ecolor="#A0A0A0", elinewidth=1, capsize=2, zorder=1)
+ax.scatter(o["odds_ratio"], o.index, color=cols, zorder=2)
 ax.axvline(1, color="black", lw=.8); ax.set_xscale("log")
-from matplotlib.ticker import FuncFormatter; ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
-ax.set(xlabel="Odds ratio for CHE (log scale; orange = p < .05)", title="RQ2: logistic regression for CHE"); save(fig, "fig10_rq2_or")
+ticks = [t for t in (0.1, 0.2, 0.5, 1, 2, 5) if o[["odds_ratio", "ci_low", "ci_high"]].min().min() * .8 <= t <= o[["odds_ratio", "ci_low", "ci_high"]].max().max() * 1.25]
+ax.set_xticks(ticks, [f"{t:g}" for t in ticks]); ax.xaxis.set_minor_formatter(plt.NullFormatter())
+ax.set(xlabel="Odds ratio for CHE with 95% CI (log scale; orange = p < .05)", title="RQ2: logistic regression for CHE"); save(fig, "fig10_rq2_or")
 
 # ---------- 2025 (RQ4) ----------
 f80 = PROCESSED / "cancer_episodes_nss80.csv"
@@ -172,8 +204,10 @@ if f80.exists():
     fig, ax = plt.subplots(figsize=(6, 3.4)); x = np.arange(3); w = .38
     for i, (lab, dd, colr) in enumerate([("2017-18", d, BLUE), ("2025", d80, ORANGE)]):
         v = [100 * dd.loc[dd.facility_type == k, "che"].mean() for k in FAC]
-        bb = ax.bar(x + (i - .5) * w, v, w, color=colr, label=lab); ax.bar_label(bb, fmt="%.0f%%", fontsize=8)
-    ax.set_xticks(x, FAC.values()); ax.set(ylabel="Episodes with CHE (%)", ylim=(0, 100), title="RQ4: CHE by hospital type, 2017-18 vs 2025")
+        nn = [int((dd.facility_type == k).sum()) for k in FAC]
+        bb = ax.bar(x + (i - .5) * w, v, w, color=colr, label=lab)
+        ax.bar_label(bb, labels=[f"{a:.0f}%\nn={b:,}" for a, b in zip(v, nn)], fontsize=7)
+    ax.set_xticks(x, FAC.values()); ax.set(xlabel="Hospital type", ylabel="Episodes with CHE (%)", ylim=(0, 105), title="RQ4: CHE by hospital type, 2017-18 vs 2025")
     ax.set_title(ax.get_title(), pad=24); ax.legend(frameon=False, ncol=2, loc="lower center", bbox_to_anchor=(0.5, 1.0)); save(fig, "fig11_rq4_che_by_survey")
 
 json.dump(summary, open(OUT / "eda_summary.json", "w"), indent=2, default=float)
