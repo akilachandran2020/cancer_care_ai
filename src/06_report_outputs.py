@@ -97,12 +97,25 @@ ax.set_title("CHE by hospital type and scheme coverage", pad=24)
 ax.legend(frameon=False, ncol=2, loc="lower center", bbox_to_anchor=(0.5, 1.0))
 save(fig, "fig5_che_by_facility_insurance")
 
-fig, ax = plt.subplots(figsize=(6, 3.4))
+fig, ax = plt.subplots(figsize=(6.4, 3.8))
 d["stay_band"] = pd.cut(d["stay_days"], [0, 2, 5, 10, 20, 1e9], labels=["1-2", "3-5", "6-10", "11-20", ">20"])
-s = d.groupby(["stay_band", "facility_public"], observed=True)["oop_medical"].median().unstack() / 1000
-for col, colr, lab in [(0, ORANGE, "Private/charitable"), (1, BLUE, "Public")]:
-    if col in s: ax.plot(s.index.astype(str), s[col].values, marker="o", color=colr, label=lab)
-ax.set(xlabel="Length of stay (days)", ylabel="Median OOPE (Rs thousand)", title="Median OOPE by length of stay")
+g = d.groupby(["stay_band", "facility_public"], observed=True)["oop_medical"]
+s, n = g.median().unstack() / 1000, g.size().unstack()
+x, w = np.arange(len(s)), 0.38
+# Bars = median per stay band (bands are categories of unequal width, so bars, not a continuous line);
+# the marker line on top only guides the eye across bands. n under each bar shows how many episodes back each median.
+for i, (col, colr, lab) in enumerate([(1, BLUE, "Public"), (0, ORANGE, "Private/charitable")]):
+    if col not in s: continue
+    xs = x + (i - 0.5) * w
+    ax.bar(xs, s[col].values, w, color=colr, alpha=.85, label=lab)
+    ax.plot(xs, s[col].values, marker="o", ms=4, lw=1.2, color="black" if col == 1 else "#7F3F00")
+    for xi, v, k in zip(xs, s[col].values, n[col].values):
+        ax.text(xi, v + 1.5, f"{v:.0f}", ha="center", va="bottom", fontsize=7)
+        ax.text(xi, -0.015, f"n={k}", ha="center", va="top", fontsize=6.5, color="#404040", transform=ax.get_xaxis_transform())
+ax.set_xticks(x, s.index.astype(str)); ax.tick_params(axis="x", pad=13, length=0)
+ax.set_ylim(0, s.max().max() * 1.15)
+ax.set(xlabel="Length of stay (days, banded)", ylabel="Median OOPE (Rs thousand)",
+       title="Median OOPE by length of stay and hospital type")
 ax.legend(frameon=False)
 save(fig, "fig6_oope_by_stay")
 
