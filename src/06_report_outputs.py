@@ -27,7 +27,9 @@ RUPEE_TICKS = [(0, "0"), (100, "Rs 100"), (1e3, "Rs 1k"), (1e4, "Rs 10k"), (1e5,
 def rupee_axis(ax, which="x"):
     """Second axis that labels ln(OOPE + 1) values in rupees, so log units are readable."""
     sec = ax.secondary_xaxis("top") if which == "x" else ax.secondary_yaxis("right")
-    pos, lab = [np.log1p(v) for v, _ in RUPEE_TICKS], [l for _, l in RUPEE_TICKS]
+    ticks = RUPEE_TICKS if which == "y" else [(0, "0"), (1e3, "1k"), (1e4, "10k"), (1e5, "1 lakh"), (1e6, "10 lakh")]
+    pos, lab = [np.log1p(v) for v, _ in ticks], [l for _, l in ticks]
+    if which == "x": sec.set_xlabel("Rupees", fontsize=7, color="#404040", labelpad=2)
     (sec.set_xticks if which == "x" else sec.set_yticks)(pos, lab)
     sec.tick_params(labelsize=7, colors="#404040")
     return sec

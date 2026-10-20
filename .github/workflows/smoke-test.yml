@@ -14,9 +14,12 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r requirements.txt matplotlib
+      - name: Unit tests (synthetic tables)
+        run: python -m pytest -q
       - name: Run pipeline on synthetic data
         working-directory: src
         run: |
+          sed -i 's/^ROUND = .*/ROUND = "nss75"/' config.py   # the smoke data is in 2017-18 layout
           python 00_make_smoketest_data.py
           python 02_sample_size.py
           python 01_build_cancer_episodes.py

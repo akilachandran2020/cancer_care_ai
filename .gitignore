@@ -6,6 +6,7 @@ outputs/*
 !outputs/README.md
 # Aggregate results only (no episode rows) - safe to publish
 !outputs/results.json
+!outputs/results_2025.json
 !outputs/figure1_coverage.csv
 !outputs/figure1_coverage.png
 !outputs/report/
