@@ -1,7 +1,10 @@
 """Step 1 - Build one row per cancer hospitalisation episode.
-ROUND = "nss75": 2017-18 levels 2, 3, 5, 6, 7 (all RQs).  ROUND = "nss80": 2025 files hhscsL1 + hhscsL2 + hhscsL4 (RQ4, Figure 1)."""
+python src/01_build_cancer_episodes.py            builds both rounds (default)
+python src/01_build_cancer_episodes.py nss80      2025 only: files hhscsL1 + hhscsL2 + hhscsL4 (primary file for RQ1-RQ3; RQ4; Figure 1)
+python src/01_build_cancer_episodes.py nss75      2017-18 only: levels 2, 3, 5, 6, 7 (RQ4 and the round comparison)"""
+import sys
 import numpy as np, pandas as pd
-from config import ROUND, RAW, PROCESSED, FILES, FILES80, HH_KEY, HH_KEY80, CASE_KEY, CANCER_CODE, CHE_THRESHOLD
+from config import ROOT, ROUND, RAW, PROCESSED, FILES, FILES80, HH_KEY, HH_KEY80, CASE_KEY, CANCER_CODE, CHE_THRESHOLD
 
 def load(key):
     f = RAW / f"{(FILES80 if ROUND == 'nss80' else FILES)[key]}.csv"
@@ -14,7 +17,8 @@ def num(s):
 
 def build_nss80():
     """2025 survey. Field mapping (hhscsL4): b6i5 ailment (13 = cancer, same list as 2017-18), b6i7 institution
-    (1 public, 2 charitable/NGO, 3 private), b6i3 age, b7i12 total medical, b7i15 total incl. non-medical,
+    (1 public, 2 charitable/NGO, 3 private), b6i9 type of ward (1 free, 2 paying general, 3 paying special),
+    b6i12 duration of stay (days), b6i13 surgery (same 1-4 codes as 2017-18; 2, 3, 4 = surgery), b6i3 age, b7i12 total medical, b7i15 total incl. non-medical,
     b7i16 reimbursed, b7i17 major source of finance, b7i18 place, b6i2 serial of member hospitalised (91/92 = died
     or left); hhscsL1: umce (monthly consumption), hhsz; hhscsL2 (household members): b3c1 member serial, b3c4 sex,
     b3c17 health-expenditure scheme (19 = not covered; reproduces NSO's published 47.4% rural / 44.3% urban)."""
@@ -39,6 +43,9 @@ def build_nss80():
         "hh_monthly_consumption": num(ep["umce"]),
         "facility_public": (num(ep["b6i7"]) == 1).astype(int),
         "facility_type": num(ep["b6i7"]),
+        "ward_type": num(ep["b6i9"]),
+        "stay_days": num(ep["b6i12"]),
+        "surgery_received": num(ep["b6i13"]).isin([2, 3, 4]).astype(int),
         "place_code": num(ep["b7i18"]),
         "medical_exp": num(ep["b7i12"]).fillna(0),
         "total_exp": num(ep["b7i15"]).fillna(0),
@@ -114,10 +121,16 @@ def build_nss75():
                         - out["reimbursed"]).clip(lower=0)
     return finish(out)
 
-def main():
-    out = build_nss80() if ROUND == "nss80" else build_nss75()
-    out.to_csv(PROCESSED / f"cancer_episodes_{ROUND}.csv", index=False)
-    print(f"{ROUND}: {len(out)} cancer hospitalisation episodes written")
+def main(rounds=None):
+    global ROUND, RAW
+    rounds = rounds or (sys.argv[1:] or ["nss80", "nss75"])
+    for r in rounds:
+        if r not in ("nss75", "nss80"):
+            raise SystemExit("Usage: python src/01_build_cancer_episodes.py [nss80] [nss75]   (no argument builds both)")
+        ROUND, RAW = r, ROOT / "data/raw" / r
+        out = build_nss80() if r == "nss80" else build_nss75()
+        out.to_csv(PROCESSED / f"cancer_episodes_{r}.csv", index=False)
+        print(f"{r}: {len(out)} cancer hospitalisation episodes written")
 
 if __name__ == "__main__":
     main()

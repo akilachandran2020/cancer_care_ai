@@ -16,7 +16,7 @@ def models():
 
 @pytest.fixture(scope="session")
 def rerun():
-    return importlib.import_module("07_rerun_2025")
+    return importlib.import_module("07_compare_rounds")
 
 def make_episodes(n=400, seed=1):
     """Synthetic episode file with every column the models use (not survey data)."""

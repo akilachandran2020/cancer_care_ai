@@ -5,9 +5,9 @@ che,Dependent (RQ2 RQ4),Binary (0/1),—,Derived,1 if total out-of-pocket spendi
 distress_financing,Descriptive,Binary (0/1),—,L07: Major_source_of_finance,1 if major source was borrowing (2) or sale of physical assets (3),Financial hardship
 facility_public,Independent (RQ3),Binary (0/1),—,L05: Type_of_medical_institution,1 = government/public hospital; private = code 3; charitable/trust = code 2,Public vs private cost gap
 insured,Predictor; Figure 1,Binary (0/1),—,L03: covered_by_any_scheme_for_health; 2025: hhscsL2: b3c17,"1 if covered by a government-sponsored, employer or private health scheme (2017-18 codes 1-4, 9; 2025: any code except 19); missing if the member died or left the household (serial 91/92)",Financial protection
-ward_type,Independent,Categorical (3),—,L05: Type_of_ward,Free (1) paying general (2) paying special (3),Cost driver
-stay_days,Independent,Count,days,L05: Duration_of_stay_in_hospital_day,Length of hospital stay,Cost driver
-surgery_received,Independent,Binary (0/1),—,L05: Surgery,1 if surgery was received (free partly free or paid),Treatment intensity proxy
+ward_type,Independent,Categorical (3),—,L05: Type_of_ward; 2025 hhscsL4: b6i9,Free (1) paying general (2) paying special (3),Cost driver
+stay_days,Independent,Count,days,L05: Duration_of_stay_in_hospital_day; 2025 hhscsL4: b6i12,Length of hospital stay,Cost driver
+surgery_received,Independent,Binary (0/1),—,L05: Surgery; 2025 hhscsL4: b6i13 (codes 2 3 4),1 if surgery was received (free partly free or paid),Treatment intensity proxy
 outside_district / outside_state,Independent,Binary (0/1),—,L07: Place_of_hospitalisation_code,Treated outside home district (codes 3-5) / outside home state (code 5),Travel burden
 age,Independent,Continuous,years,L05: Age,Age of patient,Demographic
 female,Independent,Binary (0/1),—,L03: Gender; 2025: hhscsL2: b3c4,1 = female,Equity check

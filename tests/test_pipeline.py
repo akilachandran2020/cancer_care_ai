@@ -153,3 +153,9 @@ def test_rq2_confidence_intervals_bracket_odds_ratios(models, episodes):
     r = models.rq2(episodes)
     for term, orv in r["odds_ratios"].items():
         assert r["ci_low"][term] < orv < r["ci_high"][term]
+
+def test_rq2_reports_auc_events_and_vif(models, episodes):
+    r = models.rq2(episodes)
+    assert 0.5 <= r["auc"] <= 1
+    assert r["events_per_parameter"] == r["events"] / (len(r["odds_ratios"]) - 1)
+    assert r["max_vif"] >= 1

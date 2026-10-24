@@ -1,7 +1,8 @@
-"""Configuration for the AI Cancer Care Companion analysis (NSS 75th round, Schedule 25.0)."""
+"""Configuration for the AI Cancer Care Companion analysis (NSS 80th round, 2025, primary; NSS 75th round, 2017-18, for RQ4)."""
 import pathlib
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-ROUND = "nss75"            # set to "nss80" to build the 2025 episode file for RQ4 (2025 field mapping: see README)
+ROUND = "nss75"            # default raw folder for the synthetic smoke-test files; 01_build_cancer_episodes.py builds both rounds
+PRIMARY = "nss80"          # survey analysed for RQ1-RQ3 (2025); 2017-18 is used for RQ4 and the cross-round comparison
 RAW = ROOT / "data/raw" / ROUND
 PROCESSED = ROOT / "data/processed"
 OUTPUTS = ROOT / "outputs"

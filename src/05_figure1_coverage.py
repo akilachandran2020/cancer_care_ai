@@ -3,10 +3,8 @@ patients, by sector, 2017-18 (NSS 75th round) vs 2025 (NSO 80th round).
 Needs both episode files from step 1. Episodes of members who died or left the household (serial 91/92)
 are excluded because their coverage was not recorded."""
 import numpy as np, pandas as pd
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 from config import PROCESSED, OUTPUTS
+from plot_style import plt, NAVY, ORANGE, grid, pct_axis, save
 
 ROUNDS = {"2017-18": "cancer_episodes_nss75.csv", "2025": "cancer_episodes_nss80.csv"}
 
@@ -27,18 +25,16 @@ def main():
     t = coverage()
     t.to_csv(OUTPUTS / "figure1_coverage.csv", index=False)
     print(t.to_string(index=False))
-    fig, ax = plt.subplots(figsize=(6.5, 3.6), dpi=300)
-    x, w = np.arange(2), 0.34
-    for i, (label, colour) in enumerate([("2017-18", "#1F4E79"), ("2025", "#ED7D31")]):
+    fig, ax = plt.subplots(figsize=(6.2, 3.4))
+    x, w = np.arange(2), 0.36
+    for i, (label, colour) in enumerate([("2017-18", NAVY), ("2025", ORANGE)]):
         v = t[t.survey == label].set_index("sector").loc[["Rural", "Urban"], "coverage_pct"].values
-        bars = ax.bar(x + (i - 0.5) * w, v, w, color=colour, label=label, zorder=3)
-        for b, val in zip(bars, v):
-            ax.text(b.get_x() + b.get_width() / 2, val + 1, f"{val:.1f}%", ha="center", va="bottom", fontweight="bold")
-    ax.set_xticks(x, ["Rural", "Urban"]); ax.set_ylim(0, 100)
-    ax.set_ylabel("Cancer patients covered by a\nhealth-expenditure scheme (%)")
-    ax.grid(axis="y", color="#D5DCE6", zorder=0); ax.spines[["top", "right"]].set_visible(False)
-    ax.legend(frameon=False, ncol=2, loc="lower center", bbox_to_anchor=(0.5, 1.0))
-    plt.tight_layout(); plt.savefig(OUTPUTS / "figure1_coverage.png")
+        bars = ax.bar(x + (i - 0.5) * w, v, w, color=colour, label=label.replace("-", "–"), zorder=3)
+        ax.bar_label(bars, fmt="%.1f%%", padding=2, fontsize=9)
+    ax.set_xticks(x, ["Rural", "Urban"]); ax.set_xlabel("Place of residence")
+    ax.set_ylabel("Patients covered by a\nhealth-expenditure scheme (%)"); pct_axis(ax); grid(ax)
+    ax.legend(title="Survey round", frameon=False, loc="upper left")
+    save(fig, OUTPUTS / "figure1_coverage.png")
 
 if __name__ == "__main__":
     main()

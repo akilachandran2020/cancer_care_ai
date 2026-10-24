@@ -1,5 +1,6 @@
 """Step 3 - Expense-prediction engine (RQ1), catastrophic-spending drivers (RQ2),
-public vs private cost (RQ3), CHE in 2017-18 vs 2025 (RQ4), fairness audit."""
+public vs private cost (RQ3) on the PRIMARY survey (2025 by default; see config.py),
+CHE in 2017-18 vs 2025 (RQ4) and a fairness audit."""
 import json, warnings
 import numpy as np, pandas as pd
 from scipy import stats
@@ -11,7 +12,7 @@ from sklearn.linear_model import LinearRegression
 import lightgbm as lgb
 import xgboost as xgb
 from sklearn.ensemble import RandomForestRegressor
-from config import PROCESSED, OUTPUTS, SEED
+from config import PROCESSED, OUTPUTS, SEED, PRIMARY
 warnings.filterwarnings("ignore")
 
 FEATS = ["age", "female", "sector_urban", "facility_public", "ward_type", "stay_days", "surgery_received",
@@ -24,7 +25,7 @@ RQ2_TERMS = ["age", "female", "sector_urban", "facility_public", "stay_days", "s
 def rq1(df, feats=FEATS):
     """Compare linear regression, random forest, gradient boosting (LightGBM) and XGBoost
     with 5-fold cross-validation; every episode gets an out-of-fold prediction.
-    feats defaults to the 14 study features; 07_rerun_2025.py passes the features both survey rounds share."""
+    feats defaults to the 14 study features; 07_compare_rounds.py passes the features both survey rounds share."""
     X, y = df[feats].fillna(df[feats].median()), df["log_oop"]
     Xd = pd.get_dummies(X, columns=[c for c in CAT_FEATS if c in feats], drop_first=True)
     models = {
@@ -67,8 +68,15 @@ def rq2(df, feats=FEATS):
     terms = [t for t in RQ2_TERMS if t.removeprefix("C(").removesuffix(")") in feats]
     m = smf.logit("che ~ " + " + ".join(terms), data=df.dropna(subset=feats)).fit(disp=0)
     ci = np.exp(m.conf_int())                                                  # 95% CI on the odds-ratio scale
+    from sklearn.metrics import roc_auc_score
+    from statsmodels.stats.outliers_influence import variance_inflation_factor
+    X = m.model.exog
+    vif = {n: float(variance_inflation_factor(X, i)) for i, n in enumerate(m.model.exog_names) if n != "Intercept"}
+    events = int(m.model.endog.sum())
     return {"n": int(m.nobs), "odds_ratios": np.exp(m.params).to_dict(), "p": m.pvalues.to_dict(), "pseudo_r2": m.prsquared,
-            "ci_low": ci[0].to_dict(), "ci_high": ci[1].to_dict()}
+            "ci_low": ci[0].to_dict(), "ci_high": ci[1].to_dict(),
+            "auc": float(roc_auc_score(m.model.endog, m.predict())),        # in-sample discrimination
+            "events": events, "events_per_parameter": events / (len(m.params) - 1), "max_vif": max(vif.values()), "vif": vif}
 
 def rq3(df):
     pub, pvt = df.loc[df["facility_type"] == 1, "log_oop"], df.loc[df["facility_type"] == 3, "log_oop"]
@@ -80,20 +88,29 @@ def rq3(df):
             "median_oop_private": float(np.expm1(pvt.median())), "welch_t": t.statistic, "welch_df": float(welch_df), "p": t.pvalue,
             "cohen_d": (pvt.mean() - pub.mean()) / sd, "mann_whitney_p": stats.mannwhitneyu(pub, pvt).pvalue}
 
-def rq4(df):
-    """CHE rate, 2017-18 (nss75) vs 2025 (nss80). Needs cancer_episodes_nss80.csv (README step 2)."""
-    f80 = PROCESSED / "cancer_episodes_nss80.csv"
-    if f80.exists():
-        d80 = pd.read_csv(f80).dropna(subset=["che"])
-        both = pd.concat([df.assign(survey_2025=0), d80.assign(survey_2025=1)], ignore_index=True)
+def load_round(round_):
+    f = PROCESSED / f"cancer_episodes_{round_}.csv"
+    return pd.read_csv(f).dropna(subset=["log_oop", "annual_consumption"]) if f.exists() else None
+
+def rq4():
+    """CHE rate, 2017-18 (nss75) vs 2025 (nss80). Needs both episode files (run step 1 for each round)."""
+    d75, d80 = load_round("nss75"), load_round("nss80")
+    if d75 is not None and d80 is not None:
+        both = pd.concat([d75.assign(survey_2025=0), d80.assign(survey_2025=1)], ignore_index=True)
         g = both.groupby("survey_2025")["che"].agg(["sum", "count"])
         z, p = proportions_ztest(g["sum"].values, g["count"].values)
         adj = smf.logit("che ~ survey_2025 + C(mpce_quintile) + sector_urban + facility_public", data=both).fit(disp=0)
+        p1, p2 = g.loc[0, "sum"] / g.loc[0, "count"], g.loc[1, "sum"] / g.loc[1, "count"]
+        w1 = float(np.average(d75["che"], weights=d75["weight"])); w2 = float(np.average(d80["che"], weights=d80["weight"]))
         return {"test": "CHE 2017-18 vs 2025", "n_2017": int(g.loc[0, "count"]), "n_2025": int(g.loc[1, "count"]),
-                "che_2017": g.loc[0, "sum"] / g.loc[0, "count"], "che_2025": g.loc[1, "sum"] / g.loc[1, "count"],
+                "che_2017": p1, "che_2025": p2, "che_2017_weighted": w1, "che_2025_weighted": w2,
+                "cohen_h": float(2 * np.arcsin(np.sqrt(p1)) - 2 * np.arcsin(np.sqrt(p2))),
+                "cohen_h_weighted": float(2 * np.arcsin(np.sqrt(w1)) - 2 * np.arcsin(np.sqrt(w2))),
                 "z": z, "p": p, "adjusted_or_2025": float(np.exp(adj.params["survey_2025"])),
+                "adjusted_ci_low": float(np.exp(adj.conf_int().loc["survey_2025", 0])),
+                "adjusted_ci_high": float(np.exp(adj.conf_int().loc["survey_2025", 1])),
                 "adjusted_p": float(adj.pvalues["survey_2025"])}
-    return {"test": "RQ4 not run: build cancer_episodes_nss80.csv first (set ROUND = 'nss80' and rerun step 1)"}
+    return {"test": "RQ4 not run: build both episode files first (README step 2)"}
 
 def fairness(df):
     df = df.assign(abs_err=np.abs(np.log1p(df["pred_oop"]) - df["log_oop"]),
@@ -101,14 +118,18 @@ def fairness(df):
     return {k: df.groupby(k)[["abs_err", "under"]].mean().round(3).to_dict() for k in ["sector_urban", "social_group", "female"]}
 
 def main():
-    df = pd.read_csv(PROCESSED / "cancer_episodes_nss75.csv").dropna(subset=["log_oop", "annual_consumption"])
+    primary = PRIMARY if (PROCESSED / f"cancer_episodes_{PRIMARY}.csv").exists() else "nss75"
+    if primary != PRIMARY:
+        print(f"cancer_episodes_{PRIMARY}.csv not found: analysing nss75 instead")
+    df = load_round(primary)
     df, r1 = rq1(df)
-    out = {"n": len(df), "rq1": r1, "rq2": rq2(df), "rq3": rq3(df), "rq4": rq4(df), "fairness": fairness(df),
-           "weighted_che_rate": float(np.average(df["che"], weights=df["weight"]))}
+    out = {"round": primary, "n": len(df), "rq1": r1, "rq2": rq2(df), "rq3": rq3(df), "rq4": rq4(), "fairness": fairness(df),
+           "che_rate": float(df["che"].mean()), "weighted_che_rate": float(np.average(df["che"], weights=df["weight"]))}
     df.to_csv(OUTPUTS / "episode_predictions.csv", index=False)
     json.dump(out, open(OUTPUTS / "results.json", "w"), indent=2, default=float)
-    print(json.dumps({"n": out["n"], "best": r1["best_ml"], "scores": r1["scores"], "rq1_p": r1["p"], "pi80": r1["pi80_coverage"], "rq3_d": out["rq3"]["cohen_d"],
-                      "mae_improvement_pct": r1["mae_improvement_pct"], "rq4_p": out["rq4"].get("p"), "che_rate": out["weighted_che_rate"]}, indent=1, default=float))
+    print(json.dumps({"round": primary, "n": out["n"], "best": r1["best_ml"], "scores": r1["scores"], "rq1_p": r1["p"],
+                      "pi80": r1["pi80_coverage"], "rq3_d": out["rq3"]["cohen_d"], "mae_improvement_pct": r1["mae_improvement_pct"],
+                      "rq4_p": out["rq4"].get("p"), "che_rate": out["weighted_che_rate"]}, indent=1, default=float))
 
 if __name__ == "__main__":
     main()

@@ -3,24 +3,24 @@
 * IBM SPSS Statistics 27 or later; the Complex Samples module is needed for the weighted estimates.
 FILE HANDLE spssdir /NAME='C:\cancer_repo\outputs\spss'.
 
-* ---------- 2017-18 cancer episodes ----------.
-GET FILE='spssdir/cancer_2017.sav'.
-DATASET NAME c17.
+* ---------- 2025 cancer episodes (primary analysis file) ----------.
+GET FILE='spssdir/cancer_2025.sav'.
+DATASET NAME c25.
 
 * Weighted national descriptives (Complex Samples; weight only, with-replacement estimator).
 CSPLAN ANALYSIS
-  /PLAN FILE='spssdir/plan_2017.csaplan'
+  /PLAN FILE='spssdir/plan_2025.csaplan'
   /PLANVARS ANALYSISWEIGHT=weight
   /DESIGN
   /ESTIMATOR TYPE=WR.
 CSDESCRIPTIVES
-  /PLAN FILE='spssdir/plan_2017.csaplan'
+  /PLAN FILE='spssdir/plan_2025.csaplan'
   /SUMMARY VARIABLES=oop_medical che
   /SUBPOP TABLE=facility_type
   /MEAN
   /STATISTICS SE CIN(95).
 
-* RQ2: multiple logistic regression for CHE (unweighted, as in the synopsis).
+* RQ2: multiple logistic regression for CHE (unweighted, as in the synopsis); add /PRINT=GOODFIT for Hosmer-Lemeshow.
 LOGISTIC REGRESSION VARIABLES che
   /METHOD=ENTER age female sector_urban facility_public stay_days surgery_received outside_state insured
     mpce_quintile social_group

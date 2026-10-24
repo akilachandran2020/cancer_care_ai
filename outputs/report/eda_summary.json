@@ -1,27 +1,65 @@
 {
-  "n_episodes_2017": 1606,
-  "n_hospitalisation_records_2017": 93925,
-  "duplicate_case_keys_2017": 0,
-  "duplicate_full_rows_2017": 0,
-  "member_deceased_n": 363,
-  "zero_oop_medical_n": 140,
+  "round": "nss80",
+  "n_episodes": 3283,
+  "n_hospitalisation_records": 121584,
+  "duplicate_case_keys": 0,
+  "duplicate_full_rows": 0,
+  "member_deceased_n": 762,
+  "zero_oop_medical_n": 459,
   "zero_oop_by_facility": {
-    "Public": 88,
-    "Private": 46,
-    "Charitable/NGO": 6
+    "Public": 291,
+    "Private": 134,
+    "Charitable/NGO": 34
   },
-  "outliers_raw_iqr3_n": 89,
-  "outliers_log_iqr1.5_n": 159,
-  "stay_days_over_90_n": 20,
-  "skew_raw": 15.196459379968932,
-  "skew_log": -1.9259887040105417,
-  "che_rate_unweighted": 0.7042341220423413,
-  "che_rate_weighted": 0.6306749172878673,
-  "distress_financing_rate": 0.18804483188044832,
-  "median_oop": 25000.0,
-  "mean_oop": 66910.82876712328,
-  "n_episodes_2025": 3283,
-  "che_rate_2025_unweighted": 0.5936643314042035,
-  "che_rate_2025_weighted": 0.5269510152336072,
-  "median_oop_2025": 22550.0
+  "outliers_raw_iqr3_n": 191,
+  "stay_days_over_90_n": 29,
+  "skew_raw": 6.530026283022359,
+  "skew_log": -1.404212648707729,
+  "negative_oop_set_to_zero": 12,
+  "che_rate_unweighted": 0.5936643314042035,
+  "che_rate_weighted": 0.5269510152336072,
+  "distress_financing_rate": 0.21657021017362169,
+  "median_oop": 22550.0,
+  "mean_oop": 81256.10630520865,
+  "weighted_mean_oop": 66311.34398413375,
+  "episodes_above_5_lakh": 86,
+  "che_by_facility_insurance_pct": {
+    "0.0": {
+      "1": 49.6,
+      "2": 82.5,
+      "3": 85.7
+    },
+    "1.0": {
+      "1": 36.2,
+      "2": 51.6,
+      "3": 63.7
+    }
+  },
+  "che_by_facility_insurance_n": {
+    "0.0": {
+      "1": 228,
+      "2": 40,
+      "3": 357
+    },
+    "1.0": {
+      "1": 672,
+      "2": 157,
+      "3": 1067
+    }
+  },
+  "stay_over_30_excluded_from_fig6_n": 180,
+  "fig6_trend_public0": {
+    "1": 10310,
+    "5": 52120,
+    "10": 95969,
+    "20": 132593,
+    "30": 153686
+  },
+  "fig6_trend_public1": {
+    "1": 582,
+    "5": 1854,
+    "10": 4449,
+    "20": 6807,
+    "30": 6095
+  }
 }

@@ -1,12 +1,13 @@
-"""Step 7 - Robustness check: rerun RQ1-RQ3 and the fairness audit on the 2025 (NSS 80th round) episode file.
+"""Step 7 - Cross-round comparison: rerun RQ1-RQ3 and the fairness audit on BOTH survey rounds
+(2017-18 and 2025) with the same features, seed and folds, so the two rounds can be compared like for like.
 
-The 2025 episode file has no ward type, length of stay or surgery fields (they are not mapped from hhscsL4),
-so a like-for-like comparison refits BOTH rounds on the features they share. The full 14-feature 2017-18
-results in results.json are not changed.
+Since ward type (b6i9), length of stay (b6i12) and surgery (b6i13) are mapped from hhscsL4, the 2025 file has
+all 14 study features, so both rounds are fitted on the full feature set. shared_features() still drops any
+feature that is missing or empty in the 2025 file, so the script keeps working on a partial 2025 build.
 
-Run after 01 (both rounds) and 03:  python 07_rerun_2025.py
-Writes outputs/results_2025.json, outputs/episode_predictions_2025.csv,
-       outputs/report/table_rerun_2025.csv and outputs/report/table_rq2_or_by_round.csv
+Run after 01 (both rounds) and 03:  python 07_compare_rounds.py
+Writes outputs/results_by_round.json, outputs/episode_predictions_nss75.csv,
+       outputs/report/table_by_round.csv and outputs/report/table_rq2_or_by_round.csv
 """
 import importlib, json
 import numpy as np, pandas as pd
@@ -18,7 +19,7 @@ REPORT = OUTPUTS / "report"
 def load(round_):
     f = PROCESSED / f"cancer_episodes_{round_}.csv"
     if not f.exists():
-        raise SystemExit(f"Missing {f.name}: set ROUND = '{round_}' in config.py and rerun 01_build_cancer_episodes.py")
+        raise SystemExit(f"Missing {f.name}: run python src/01_build_cancer_episodes.py {round_}")
     return pd.read_csv(f).dropna(subset=["log_oop", "annual_consumption"])
 
 def shared_features(d80):
@@ -55,17 +56,17 @@ def main():
     d75, d80 = load("nss75"), load("nss80")
     common = shared_features(d80)
     dropped = [f for f in m.FEATS if f not in common]
-    print(f"Shared features ({len(common)}): {common}\nNot in the 2025 file: {dropped}")
+    print(f"Shared features ({len(common)}): {common}\nNot in the 2025 file: {dropped or 'none'}")
 
-    _, r75 = run(d75, common)
-    d80, r80 = run(d80, common)
+    d75_pred, r75 = run(d75, common)
+    _, r80 = run(d80, common)
     results = {"common_features": common, "dropped_features": dropped, "nss75_common": r75, "nss80_common": r80}
-    json.dump(results, open(OUTPUTS / "results_2025.json", "w"), indent=2, default=float)
-    d80.to_csv(OUTPUTS / "episode_predictions_2025.csv", index=False)
+    json.dump(results, open(OUTPUTS / "results_by_round.json", "w"), indent=2, default=float)
+    d75_pred.to_csv(OUTPUTS / "episode_predictions_nss75.csv", index=False)
 
     REPORT.mkdir(parents=True, exist_ok=True)
-    table = pd.concat([summary_rows("2017-18 (shared features)", r75), summary_rows("2025 (shared features)", r80)], axis=1)
-    table.to_csv(REPORT / "table_rerun_2025.csv")
+    table = pd.concat([summary_rows("2017-18", r75), summary_rows("2025", r80)], axis=1)
+    table.to_csv(REPORT / "table_by_round.csv")
     ors = pd.DataFrame({"OR 2017-18": r75["rq2"]["odds_ratios"], "p 2017-18": r75["rq2"]["p"],
                         "OR 2025": r80["rq2"]["odds_ratios"], "p 2025": r80["rq2"]["p"]}).drop(index="Intercept").round(4)
     ors.to_csv(REPORT / "table_rq2_or_by_round.csv")

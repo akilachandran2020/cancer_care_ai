@@ -1,7 +1,7 @@
 """Step 4 - Export the episode files to SPSS (.sav) with variable and value labels, for spss/rq2_rq4.sps.
-Writes outputs/spss/cancer_2017.sav (RQ2, RQ3, descriptives) and outputs/spss/cancer_2017_2025.sav (RQ4)."""
+Writes outputs/spss/cancer_2025.sav (primary round: RQ2, RQ3, descriptives) and outputs/spss/cancer_2017_2025.sav (RQ4)."""
 import pandas as pd, pyreadstat
-from config import PROCESSED, OUTPUTS
+from config import PROCESSED, OUTPUTS, PRIMARY
 
 KEEP = ["oop_medical", "log_oop", "oop_total", "che", "distress_financing", "facility_public", "facility_type",
         "ward_type", "stay_days", "surgery_received", "outside_district", "outside_state", "insured", "age", "female",
@@ -23,11 +23,13 @@ def save(df, name):
     print(f"{name}: {len(df)} episodes")
 
 def main():
-    d17 = pd.read_csv(PROCESSED / "cancer_episodes_nss75.csv")
-    save(d17[KEEP], "cancer_2017.sav")
-    f80 = PROCESSED / "cancer_episodes_nss80.csv"
-    if f80.exists():
-        d25 = pd.read_csv(f80)
+    year = {"nss75": "2017", "nss80": "2025"}
+    primary = PRIMARY if (PROCESSED / f"cancer_episodes_{PRIMARY}.csv").exists() else "nss75"
+    dp = pd.read_csv(PROCESSED / f"cancer_episodes_{primary}.csv")
+    save(dp[KEEP], f"cancer_{year[primary]}.sav")
+    f75, f80 = PROCESSED / "cancer_episodes_nss75.csv", PROCESSED / "cancer_episodes_nss80.csv"
+    if f75.exists() and f80.exists():
+        d17, d25 = pd.read_csv(f75), pd.read_csv(f80)
         cols = ["che", "facility_public", "facility_type", "sector_urban", "mpce_quintile", "weight", "oop_medical"]
         both = pd.concat([d17[cols].assign(survey_2025=0), d25[cols].assign(survey_2025=1)], ignore_index=True)
         save(both, "cancer_2017_2025.sav")
