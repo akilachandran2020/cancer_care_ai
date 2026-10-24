@@ -159,3 +159,11 @@ def test_rq2_reports_auc_events_and_vif(models, episodes):
     assert 0.5 <= r["auc"] <= 1
     assert r["events_per_parameter"] == r["events"] / (len(r["odds_ratios"]) - 1)
     assert r["max_vif"] >= 1
+
+
+def test_strata_have_at_least_two_psus_for_complex_samples():
+    import importlib
+    build = importlib.import_module("01_build_cancer_episodes")
+    df = pd.DataFrame({"psu": [1, 2, 3, 4, 5], "stratum": [11, 11, 21, 21, 31]})   # stratum 31 has one PSU
+    out = build.collapse_strata(df.copy())
+    assert (out.groupby("stratum")["psu"].nunique() >= 2).all()

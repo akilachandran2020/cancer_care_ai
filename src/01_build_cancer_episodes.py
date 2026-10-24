@@ -52,6 +52,8 @@ def build_nss80():
         "reimbursed": num(ep["b7i16"]).fillna(0),
         "major_finance": num(ep["b7i17"]),
         "weight": num(ep["mult"]),
+        "psu": num(ep["fsu"]),                                   # first-stage unit (village/block)
+        "stratum": num(ep["nssreg"]) * 10 + num(ep["sec"]),      # NSS region x sector
     })
     out["outside_state"] = (out["place_code"] == 5).astype(int)
     out["outside_district"] = out["place_code"].isin([3, 4, 5]).astype(int)
@@ -60,7 +62,27 @@ def build_nss80():
     return finish(out)
 
 
+def collapse_strata(out):
+    """Complex-samples variance needs at least 2 first-stage units per stratum. A stratum with a single PSU among the
+    cancer episodes is merged into the nearest stratum (by code) of the same sector, the usual collapsing rule."""
+    if "psu" not in out or "stratum" not in out:
+        return out
+    stratum = out["stratum"].copy()
+    for _ in range(5):
+        n = out.assign(stratum=stratum).groupby("stratum")["psu"].nunique()
+        lone = n[n < 2].index
+        if len(lone) == 0:
+            break
+        for k in lone:
+            same = [j for j in n.index if j != k and j % 10 == k % 10]
+            if same:
+                stratum[stratum == k] = min(same, key=lambda j: abs(j - k))
+    out["stratum"] = stratum.astype(int)
+    out["psu"] = out["psu"].astype(int)
+    return out
+
 def finish(out):
+    out = collapse_strata(out)
     out["log_oop"] = np.log1p(out["oop_medical"])
     out["annual_consumption"] = out["hh_monthly_consumption"] * 12
     out["mpce"] = out["hh_monthly_consumption"] / out["hh_size"]
@@ -113,6 +135,8 @@ def build_nss75():
         "major_finance": num(ep["Major_source_of_finance"]),
         "income_loss": num(ep["Loss_of_household_income_due_to_"]),
         "weight": np.where(num(ep["NSS"]) == num(ep["NSC"]), num(ep["MULT"]) / 100, num(ep["MULT"]) / 200),
+        "psu": num(ep["FSU"]),
+        "stratum": num(ep["NSS_Region"]) * 10 + num(ep["Sector"]),
     })
     out["outside_state"] = (out["place_code"] == 5).astype(int)
     out["outside_district"] = out["place_code"].isin([3, 4, 5]).astype(int)

@@ -22,3 +22,5 @@ pred_oop / pi_low / pi_high,Model output,Continuous,Rupees,Derived,Predicted cos
 survey_2025,Grouping (RQ4),Binary (0/1),—,Derived,1 for 2025 (NSO 80th round) episodes; 0 for 2017-18,Before vs after PM-JAY
 che (2025 file),Dependent (RQ4),Binary (0/1),—,hhscsL4: b7i15 - b7i16 vs hhscsL1: umce x 12,1 if 2025 total out-of-pocket spending exceeds 10% of annual household consumption,CHE in 2025
 member_deceased,Predictor (missing-data indicator),Binary (0/1),—,L05: Srl_no_of_member_hospitalised; 2025: hhscsL4: b6i2,1 if the hospitalised member had died or left the household (serial 91 or 92); coverage and sex not recorded,Handles missing person-level data
+psu,Design variable (complex samples),Integer,—,L05: FSU; 2025: hhscsL4: fsu,First-stage sampling unit (village or urban block) of the household; the cluster for design-based standard errors,Survey design
+stratum,Design variable (complex samples),Integer,—,L05: NSS_Region and Sector; 2025: hhscsL4: nssreg and sec,NSS region x sector (code = region x 10 + sector); strata with a single FSU among cancer episodes are merged into the nearest stratum of the same sector,Survey design
