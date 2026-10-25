@@ -1,4 +1,4 @@
-"""Shared fixtures. Every test uses small SYNTHETIC tables built here; no survey microdata is read."""
+"""Synthetic fixtures; no survey data is read."""
 import importlib, pathlib, sys
 import numpy as np, pandas as pd
 import pytest
@@ -19,7 +19,7 @@ def rerun():
     return importlib.import_module("07_compare_rounds")
 
 def make_episodes(n=400, seed=1):
-    """Synthetic episode file with every column the models use (not survey data)."""
+    """Synthetic episode file."""
     rng = np.random.default_rng(seed)
     fac = rng.choice([1, 2, 3], n, p=[.45, .05, .5])
     stay = rng.integers(1, 40, n)
@@ -37,7 +37,7 @@ def make_episodes(n=400, seed=1):
         "mpce_quintile": rng.integers(1, 6, n), "social_group": rng.choice([1, 2, 3, 9], n),
         "hh_size": rng.integers(1, 10, n), "oop_medical": oop, "oop_total": oop + rng.integers(0, 5000, n),
         "annual_consumption": cons, "weight": rng.uniform(50, 5000, n)})
-    df.loc[:30, ["female", "insured"]] = np.nan          # patients who died or left the household
+    df.loc[:30, ["female", "insured"]] = np.nan          # died or left
     df.loc[:30, "member_deceased"] = 1
     df["log_oop"] = np.log1p(df["oop_medical"])
     df["che"] = (df["oop_total"] > .10 * df["annual_consumption"]).astype(int)

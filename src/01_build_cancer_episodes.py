@@ -1,7 +1,7 @@
 """Step 1 - Build one row per cancer hospitalisation episode.
-python src/01_build_cancer_episodes.py            builds both rounds (default)
-python src/01_build_cancer_episodes.py nss80      2025 only: files hhscsL1 + hhscsL2 + hhscsL4 (primary file for RQ1-RQ3; RQ4; Figure 1)
-python src/01_build_cancer_episodes.py nss75      2017-18 only: levels 2, 3, 5, 6, 7 (RQ4 and the round comparison)"""
+python src/01_build_cancer_episodes.py         both rounds
+python src/01_build_cancer_episodes.py nss80   2025 only
+python src/01_build_cancer_episodes.py nss75   2017-18 only"""
 import sys
 import numpy as np, pandas as pd
 from config import ROOT, ROUND, RAW, PROCESSED, FILES, FILES80, HH_KEY, HH_KEY80, CASE_KEY, CANCER_CODE, CHE_THRESHOLD
@@ -16,12 +16,9 @@ def num(s):
     return pd.to_numeric(s, errors="coerce")
 
 def build_nss80():
-    """2025 survey. Field mapping (hhscsL4): b6i5 ailment (13 = cancer, same list as 2017-18), b6i7 institution
-    (1 public, 2 charitable/NGO, 3 private), b6i9 type of ward (1 free, 2 paying general, 3 paying special),
-    b6i12 duration of stay (days), b6i13 surgery (same 1-4 codes as 2017-18; 2, 3, 4 = surgery), b6i3 age, b7i12 total medical, b7i15 total incl. non-medical,
-    b7i16 reimbursed, b7i17 major source of finance, b7i18 place, b6i2 serial of member hospitalised (91/92 = died
-    or left); hhscsL1: umce (monthly consumption), hhsz; hhscsL2 (household members): b3c1 member serial, b3c4 sex,
-    b3c17 health-expenditure scheme (19 = not covered; reproduces NSO's published 47.4% rural / 44.3% urban)."""
+    """2025 fields (hhscsL4): b6i5 ailment (13 = cancer), b6i7 institution, b6i9 ward, b6i12 stay (days), b6i13 surgery (2, 3, 4 = surgery),
+    b6i3 age, b7i12 medical, b7i15 total, b7i16 reimbursed, b7i17 finance source, b7i18 place, b6i2 member serial (91/92 = died or left).
+    hhscsL1: umce, hhsz. hhscsL2: b3c1 member, b3c4 sex, b3c17 scheme (19 = not covered)."""
     hosp, hh, person = load("hosp"), load("hh"), load("person")
     for d in (hosp, hh, person):
         for c in HH_KEY80:
@@ -35,7 +32,7 @@ def build_nss80():
         "sector_urban": (num(ep["sec"]) == 2).astype(int),
         "age": num(ep["b6i3"]),
         "female": np.where(num(ep["b3c4"]).isna(), np.nan, (num(ep["b3c4"]) == 2).astype(float)),
-        # members who died or left (91/92) have no hhscsL2 record, so coverage is unknown (NaN), as in 2017-18
+        # died or left: coverage unknown
         "insured": np.where(num(ep["b3c17"]).isna(), np.nan, (num(ep["b3c17"]) != 19).astype(float)),
         "member_deceased": ep["member"].isin([91, 92]).astype(int),
         "social_group": num(ep["b5i3"]),
@@ -52,7 +49,7 @@ def build_nss80():
         "reimbursed": num(ep["b7i16"]).fillna(0),
         "major_finance": num(ep["b7i17"]),
         "weight": num(ep["mult"]),
-        "psu": num(ep["fsu"]),                                   # first-stage unit (village/block)
+        "psu": num(ep["fsu"]),                                   # first-stage unit
         "stratum": num(ep["nssreg"]) * 10 + num(ep["sec"]),      # NSS region x sector
     })
     out["outside_state"] = (out["place_code"] == 5).astype(int)
@@ -63,8 +60,7 @@ def build_nss80():
 
 
 def collapse_strata(out):
-    """Complex-samples variance needs at least 2 first-stage units per stratum. A stratum with a single PSU among the
-    cancer episodes is merged into the nearest stratum (by code) of the same sector, the usual collapsing rule."""
+    """Merge strata with a single PSU into the nearest stratum of the same sector."""
     if "psu" not in out or "stratum" not in out:
         return out
     stratum = out["stratum"].copy()
@@ -124,7 +120,7 @@ def build_nss75():
         "stay_days": num(ep["Duration_of_stay_in_hospital_day"]),
         "surgery_received": num(ep["Surgery"]).isin([2, 3, 4]).astype(int),
         "place_code": num(ep["Place_of_hospitalisation_code"]),
-        # serials 91/92 = members who died or left: no person record, so coverage and sex are unknown (NaN)
+        # died or left: coverage and sex unknown
         "insured": np.where(num(ep["covered_by_any_scheme_for_health"]).isna(), np.nan,
                             num(ep["covered_by_any_scheme_for_health"]).isin([1, 2, 3, 4, 9]).astype(float)),
         "member_deceased": num(ep["Srl_no_of_member_hospitalised"]).isin([91, 92]).astype(int),

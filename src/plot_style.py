@@ -1,13 +1,11 @@
-"""Shared figure style for every report figure (APA-ready: no title inside the image, labelled axes with units,
-bar axes from zero, evenly spaced ticks that end on a labelled value, rupee symbol throughout)."""
+"""Shared figure style."""
 import math
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-NAVY, ORANGE, LIGHT, MID = "#1F4E79", "#ED7D31", "#BDD7EE", "#5B9BD5"   # report palette: blues + one orange accent only
-GREY = MID   # kept as an alias so no grey is ever drawn; "secondary" marks are mid-blue
+NAVY, ORANGE, LIGHT, MID = "#1F4E79", "#ED7D31", "#BDD7EE", "#5B9BD5"   # palette
 from matplotlib.colors import LinearSegmentedColormap
 BLUE_ORANGE = LinearSegmentedColormap.from_list("blue_orange", [ORANGE, "#FFFFFF", NAVY])
 FAC = {1: "Public", 2: "Charitable/NGO", 3: "Private"}
@@ -24,7 +22,7 @@ def grid(ax, axis="y"):
     ax.set_axisbelow(True)
 
 def nice_axis(ax, vmax, step, axis="y", headroom=1.08):
-    """Axis from 0 to the first multiple of `step` above vmax * headroom, one tick per step."""
+    """Axis from 0 to a multiple of step."""
     top = step * math.ceil(vmax * headroom / step)
     ticks = np.round(np.arange(0, top + step / 2, step), 6)
     if axis == "y":
@@ -39,7 +37,7 @@ RUPEE = [(0, "0"), (1e3, "₹1k"), (1e5, "₹1 lakh")]
 RUPEE_FULL = [(0, "0"), (100, "₹100"), (1e3, "₹1k"), (1e4, "₹10k"), (1e5, "₹1 lakh"), (1e6, "₹10 lakh")]
 
 def rupee_axis(ax, which="x"):
-    """Second axis that labels ln(OOPE + 1) values as rupees."""
+    """Secondary axis with rupee labels for ln(OOPE + 1)."""
     ticks = RUPEE if which == "x" else RUPEE_FULL
     pos, lab = [math.log1p(v) for v, _ in ticks], [l for _, l in ticks]
     if which == "x":

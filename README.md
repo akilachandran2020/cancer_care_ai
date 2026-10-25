@@ -33,6 +33,7 @@ python 01_build_cancer_episodes.py    # builds both rounds -> data/processed/can
 python 03_models_and_tests.py         # -> outputs/results.json: RQ1-RQ3 on PRIMARY (2025), RQ4 on both rounds
 python 04_export_for_spss.py          # -> outputs/spss/cancer_2025.sav, cancer_2017_2025.sav
 python 05_figure1_coverage.py         # -> outputs/figure1_coverage.csv/.png (Figure 1)
+python 08_design_based_check.py     # -> outputs/design_based_check.json: weighted CHE with design-based SEs (strata + clusters), RQ4 cross-check for SPSS
 python 07_compare_rounds.py           # same models on 2017-18 and 2025 with the same 14 features
 # -> outputs/results_by_round.json, outputs/report/table_by_round.csv, table_rq2_or_by_round.csv
 python 06_report_outputs.py           # -> outputs/report/ (cleaning log, EDA tables, Figures 2-11)

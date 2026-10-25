@@ -1,7 +1,4 @@
-"""Step 5 - Figure 1 of the synopsis: survey-weighted health-scheme coverage among hospitalised cancer
-patients, by sector, 2017-18 (NSS 75th round) vs 2025 (NSO 80th round).
-Needs both episode files from step 1. Episodes of members who died or left the household (serial 91/92)
-are excluded because their coverage was not recorded."""
+"""Step 5 - Figure 1: scheme coverage among hospitalised cancer patients by sector, 2017-18 vs 2025."""
 import numpy as np, pandas as pd
 from config import PROCESSED, OUTPUTS
 from plot_style import plt, NAVY, ORANGE, grid, pct_axis, save

@@ -1,11 +1,8 @@
-"""Step 6 - Aggregate tables and figures for the report (cleaning log, EDA, model results), for the PRIMARY
-survey round set in config.py (2025 by default). Run after steps 1 (both rounds), 3 and 7.
-Writes ONLY aggregate outputs (no episode-level rows), so everything in outputs/report/ can be published on
-GitHub without breaching MoSPI's terms of use. Figures follow plot_style.py (no in-image titles, labelled axes)."""
+"""Step 6 - Aggregate tables and figures for the report (primary round, 2025)."""
 import json
 import numpy as np, pandas as pd
 from config import RAW, PROCESSED, OUTPUTS, FILES, FILES80, CASE_KEY, HH_KEY80, CANCER_CODE, PRIMARY
-from plot_style import plt, NAVY, ORANGE, GREY, LIGHT, MID, BLUE_ORANGE, FAC, grid, nice_axis, pct_axis, rupee_axis, save as _save
+from plot_style import plt, NAVY, ORANGE, LIGHT, MID, BLUE_ORANGE, FAC, grid, nice_axis, pct_axis, rupee_axis, save as _save
 from matplotlib.lines import Line2D
 
 OUT = OUTPUTS / "report"; OUT.mkdir(parents=True, exist_ok=True)
@@ -82,7 +79,7 @@ summary["weighted_mean_oop"] = wmean(d["oop_medical"], d["weight"])
 # ---------- Figures (Figure 1 comes from step 5) ----------
 # Figure 2: distribution of OOPE, raw and log scale
 fig, ax = plt.subplots(1, 2, figsize=(7.2, 3.4))
-CAP = 500   # ₹ thousand: the raw axis is cut at ₹5 lakh so the bulk of the distribution is visible
+CAP = 500   # ₹ thousand
 above = int((d["oop_medical"] > CAP * 1000).sum())
 counts, _, _ = ax[0].hist((d["oop_medical"] / 1000).clip(upper=CAP + 5), bins=np.arange(0, CAP + 11, 10), color=NAVY, zorder=3)
 ax[0].set_xlim(0, CAP + 20); ax[0].set_xticks(range(0, CAP + 1, 100)); nice_axis(ax[0], counts.max(), 200)
@@ -130,7 +127,7 @@ ax.legend(title="Scheme coverage", frameon=False, ncol=2, loc="lower center", bb
 save(fig, "fig5_che_by_facility_insurance")
 summary["che_by_facility_insurance_pct"] = t.round(1).to_dict(); summary["che_by_facility_insurance_n"] = tn.to_dict()
 
-# Figure 6: ln(OOPE + 1) against length of stay (numeric x-axis, LOWESS trend per hospital type)
+# Figure 6: ln(OOPE + 1) by length of stay
 from statsmodels.nonparametric.smoothers_lowess import lowess
 fig, ax = plt.subplots(figsize=(6.8, 3.8))
 dd = d[d["stay_days"] <= 30]

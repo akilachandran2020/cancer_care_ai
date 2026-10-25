@@ -1,19 +1,10 @@
-"""Step 7 - Cross-round comparison: rerun RQ1-RQ3 and the fairness audit on BOTH survey rounds
-(2017-18 and 2025) with the same features, seed and folds, so the two rounds can be compared like for like.
-
-Since ward type (b6i9), length of stay (b6i12) and surgery (b6i13) are mapped from hhscsL4, the 2025 file has
-all 14 study features, so both rounds are fitted on the full feature set. shared_features() still drops any
-feature that is missing or empty in the 2025 file, so the script keeps working on a partial 2025 build.
-
-Run after 01 (both rounds) and 03:  python 07_compare_rounds.py
-Writes outputs/results_by_round.json, outputs/episode_predictions_nss75.csv,
-       outputs/report/table_by_round.csv and outputs/report/table_rq2_or_by_round.csv
-"""
+"""Step 7 - RQ1-RQ3 and the fairness audit on both rounds with the same features, seed and folds.
+Writes outputs/results_by_round.json and outputs/report/table_by_round.csv."""
 import importlib, json
 import numpy as np, pandas as pd
 from config import PROCESSED, OUTPUTS
 
-m = importlib.import_module("03_models_and_tests")   # reuse the exact RQ1-RQ3 and fairness code
+m = importlib.import_module("03_models_and_tests")   # reuse RQ1-RQ3 and fairness code
 REPORT = OUTPUTS / "report"
 
 def load(round_):
@@ -23,7 +14,7 @@ def load(round_):
     return pd.read_csv(f).dropna(subset=["log_oop", "annual_consumption"])
 
 def shared_features(d80):
-    """Study features that exist (and are not all missing) in the 2025 episode file."""
+    """Features present in the 2025 file."""
     return [f for f in m.FEATS if f in d80.columns and d80[f].notna().any()]
 
 def run(df, feats):

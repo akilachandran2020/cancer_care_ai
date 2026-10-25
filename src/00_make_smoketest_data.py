@@ -1,5 +1,4 @@
-"""SMOKE TEST ONLY - writes SYNTHETIC level files with the real NSS 75th round column names so the
-pipeline can be tested before the microdata download. Never analyse or report these values."""
+"""Smoke test: writes synthetic level files with the real NSS 75th round column names. Never analyse or report these values."""
 import numpy as np, pandas as pd
 from config import RAW, FILES, SEED
 if any((RAW / f"{f}.csv").exists() for f in FILES.values()):

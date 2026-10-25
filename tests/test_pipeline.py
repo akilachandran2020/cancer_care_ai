@@ -1,6 +1,4 @@
-"""Unit tests for the episode builder (01), models and tests (03) and the 2025 rerun (07).
-Run from the repository root:  python -m pytest -q
-All inputs are synthetic; the tests never read data/raw or data/processed."""
+"""Unit tests on synthetic data. Run: python -m pytest -q"""
 import numpy as np, pandas as pd
 import pytest
 import statsmodels.formula.api as smf
@@ -13,11 +11,11 @@ def test_che_uses_strict_10pct_threshold(build):
                         "hh_monthly_consumption": [1000] * 5, "hh_size": [1, 2, 3, 4, 5],
                         "major_finance": [1, 2, 3, 4, 1]})
     r = build.finish(out)
-    # annual consumption 12,000 -> threshold 1,200; exactly 10% is NOT catastrophic
+    # exactly 10% is not catastrophic
     assert r["annual_consumption"].tolist() == [12000] * 5
     assert r["che"].tolist() == [0, 0, 0, 1, 1]
     assert np.allclose(r["log_oop"], np.log1p(r["oop_medical"]))
-    assert r["distress_financing"].tolist() == [0, 1, 1, 0, 0]       # borrowing (2) or asset sale (3)
+    assert r["distress_financing"].tolist() == [0, 1, 1, 0, 0]       # borrowing or asset sale
 
 def test_mpce_quintiles_are_balanced(build):
     n = 100
@@ -30,17 +28,17 @@ def test_mpce_quintiles_are_balanced(build):
 
 @pytest.fixture
 def raw75(tmp_path, build, monkeypatch):
-    """Two households, three cancer cases and one non-cancer case, in the NSS 75th-round column layout."""
+    """Synthetic NSS 75th round files."""
     key = {"Hamlet_Sub_block": 1, "Second_stage_stratum": 1, "Sample_hhld": 1}
     hh = pd.DataFrame([{**key, "FSU": f, "Household_size": 4, "Social_group": 2,
                         "Household_usual_consumer_expendi": 10000} for f in (101, 102)])
     person = pd.DataFrame([{**key, "FSU": 101, "Person_serial_no": 1, "Gender": 2, "covered_by_any_scheme_for_health": 1},
                            {**key, "FSU": 102, "Person_serial_no": 1, "Gender": 1, "covered_by_any_scheme_for_health": 5}])
     cases = [  # (FSU, case, member, ailment, medical, reimbursed, place, NSS, NSC)
-        (101, 1, 1, 13, 50000, 0, 5, 1, 1),      # outside state, insured woman, MULT/100
-        (101, 2, 1, 13, 20000, 25000, 1, 1, 2),  # reimbursed more than spent -> OOPE 0, MULT/200
-        (102, 1, 91, 13, 8000, 0, 3, 1, 1),      # member died or left: no person record
-        (102, 2, 1, 4, 9000, 0, 1, 1, 1)]        # not cancer -> excluded
+        (101, 1, 1, 13, 50000, 0, 5, 1, 1),      # outside state, insured woman
+        (101, 2, 1, 13, 20000, 25000, 1, 1, 2),  # reimbursed more than spent
+        (102, 1, 91, 13, 8000, 0, 3, 1, 1),      # member died or left
+        (102, 2, 1, 4, 9000, 0, 1, 1, 1)]        # not cancer
     hosp, e1, e2 = [], [], []
     for f, c, mem, ail, med, reimb, place, nss, nsc in cases:
         ck = {**key, "FSU": f, "Srl_no_of_hospitalisation_case": c}
@@ -64,9 +62,9 @@ def test_build_keeps_only_cancer_episodes(raw75):
 def test_oope_never_negative_and_total_includes_nonmedical(raw75):
     assert (raw75["oop_medical"] >= 0).all() and (raw75["oop_total"] >= 0).all()
     over = raw75[raw75["reimbursed"] > raw75["medical_exp"]].iloc[0]
-    assert over["oop_medical"] == 0 and over["oop_total"] == 0      # 20,000 + 1,000 - 25,000 clipped to 0
+    assert over["oop_medical"] == 0 and over["oop_total"] == 0      # clipped to 0
     first = raw75[raw75["medical_exp"] == 50000].iloc[0]
-    assert first["oop_total"] == 51000                               # missing other non-medical cost counts as 0
+    assert first["oop_total"] == 51000                               # missing cost counts as 0
 
 def test_deceased_member_has_missing_coverage_and_sex(raw75):
     gone = raw75[raw75["member_deceased"] == 1]
@@ -131,7 +129,7 @@ def test_rq3_welch_t_and_df_match_statsmodels(models, episodes):
     assert r["welch_t"] == pytest.approx(t)
     assert r["welch_df"] == pytest.approx(dof)
     assert r["p"] == pytest.approx(p)
-    assert r["n_public"] + r["n_private"] == len(pub) + len(pvt)      # charitable hospitals excluded
+    assert r["n_public"] + r["n_private"] == len(pub) + len(pvt)      # charitable excluded
 
 def test_fairness_under_prediction_definition(models):
     df = pd.DataFrame({"pred_oop": [79.0, 80.0, 120.0], "oop_medical": [100.0, 100.0, 100.0],
@@ -141,11 +139,11 @@ def test_fairness_under_prediction_definition(models):
     assert r["sector_urban"]["under"][0] == 0.5                       # 79 < 80 counts; exactly 80% does not
     assert r["sector_urban"]["under"][1] == 0.0
 
-# ---------- 07: 2025 rerun ----------
+# ---------- 07: compare rounds ----------
 
 def test_shared_features_drop_fields_missing_in_2025(rerun, models, episodes):
     d80 = episodes.drop(columns=["ward_type", "stay_days", "surgery_received"])
-    d80["hh_size"] = np.nan                                           # a column that exists but is empty is dropped too
+    d80["hh_size"] = np.nan                                           # empty column is dropped
     shared = rerun.shared_features(d80)
     assert shared == [f for f in models.FEATS if f not in ("ward_type", "stay_days", "surgery_received", "hh_size")]
 
@@ -167,3 +165,13 @@ def test_strata_have_at_least_two_psus_for_complex_samples():
     df = pd.DataFrame({"psu": [1, 2, 3, 4, 5], "stratum": [11, 11, 21, 21, 31]})   # stratum 31 has one PSU
     out = build.collapse_strata(df.copy())
     assert (out.groupby("stratum")["psu"].nunique() >= 2).all()
+
+
+def test_design_based_mean_matches_weighted_mean_and_has_positive_se():
+    import importlib
+    chk = importlib.import_module("08_design_based_check")
+    df = pd.DataFrame({"weight": [1.0, 2.0, 3.0, 4.0, 1.0, 2.0], "che": [1, 0, 1, 1, 0, 0],
+                       "stratum": [1, 1, 1, 1, 2, 2], "psu": [1, 1, 2, 2, 3, 4]})
+    p, se, dof = chk.design_mean(df, "che")
+    assert p == pytest.approx((df.weight * df.che).sum() / df.weight.sum())
+    assert se > 0 and dof == 2

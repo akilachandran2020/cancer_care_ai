@@ -1,6 +1,4 @@
-"""Step 3 - Expense-prediction engine (RQ1), catastrophic-spending drivers (RQ2),
-public vs private cost (RQ3) on the PRIMARY survey (2025 by default; see config.py),
-CHE in 2017-18 vs 2025 (RQ4) and a fairness audit."""
+"""Step 3 - RQ1 cost prediction, RQ2 CHE drivers, RQ3 public vs private cost, RQ4 CHE 2017-18 vs 2025 and fairness audit."""
 import json, warnings
 import numpy as np, pandas as pd
 from scipy import stats
@@ -18,14 +16,12 @@ warnings.filterwarnings("ignore")
 FEATS = ["age", "female", "sector_urban", "facility_public", "ward_type", "stay_days", "surgery_received",
          "outside_district", "outside_state", "insured", "member_deceased", "mpce_quintile", "social_group", "hh_size"]
 
-CAT_FEATS = ["ward_type", "social_group", "mpce_quintile"]          # dummy-coded for linear regression only
+CAT_FEATS = ["ward_type", "social_group", "mpce_quintile"]          # dummy-coded for linear regression
 RQ2_TERMS = ["age", "female", "sector_urban", "facility_public", "stay_days", "surgery_received",
              "outside_state", "insured", "C(mpce_quintile)", "C(social_group)"]
 
 def rq1(df, feats=FEATS):
-    """Compare linear regression, random forest, gradient boosting (LightGBM) and XGBoost
-    with 5-fold cross-validation; every episode gets an out-of-fold prediction.
-    feats defaults to the 14 study features; 07_compare_rounds.py passes the features both survey rounds share."""
+    """5-fold cross-validation of linear, random forest, LightGBM and XGBoost; out-of-fold predictions."""
     X, y = df[feats].fillna(df[feats].median()), df["log_oop"]
     Xd = pd.get_dummies(X, columns=[c for c in CAT_FEATS if c in feats], drop_first=True)
     models = {
@@ -48,13 +44,13 @@ def rq1(df, feats=FEATS):
     err = {k: np.abs(y - p) for k, p in pred.items()}
     scores = {k: {"mae_log": float(e.mean()), "rmse_log": float(np.sqrt(np.mean((y - pred[k]) ** 2))),
                   "r2": float(1 - np.sum((y - pred[k]) ** 2) / np.sum((y - y.mean()) ** 2))} for k, e in err.items()}
-    for k in scores:   # MAE back-transformed to rupees for interpretation (synopsis: Evaluation Metrics)
+    for k in scores:   # MAE in rupees
         scores[k]["mae_rupees"] = float(np.mean(np.abs(np.expm1(y) - np.expm1(pred[k]))))
     best = min((k for k in models if k != "linear"), key=lambda k: scores[k]["mae_log"])
-    improvement = (scores["linear"]["mae_log"] - scores[best]["mae_log"]) / scores["linear"]["mae_log"] * 100  # Table 5, log scale
+    improvement = (scores["linear"]["mae_log"] - scores[best]["mae_log"]) / scores["linear"]["mae_log"] * 100
     d = err[best] - err["linear"]
     t = stats.ttest_rel(err[best], err["linear"])
-    # SHAP-style contributions from the XGBoost model fitted on all episodes
+    # SHAP from XGBoost on all episodes
     booster = models["xgboost"]().fit(X, y).get_booster()
     contrib = booster.predict(xgb.DMatrix(X), pred_contribs=True)[:, :-1]
     importance = dict(sorted(zip(feats, np.abs(contrib).mean(0).round(4)), key=lambda kv: -kv[1]))
@@ -67,7 +63,7 @@ def rq1(df, feats=FEATS):
 def rq2(df, feats=FEATS):
     terms = [t for t in RQ2_TERMS if t.removeprefix("C(").removesuffix(")") in feats]
     m = smf.logit("che ~ " + " + ".join(terms), data=df.dropna(subset=feats)).fit(disp=0)
-    ci = np.exp(m.conf_int())                                                  # 95% CI on the odds-ratio scale
+    ci = np.exp(m.conf_int())                                                  # 95% CI, odds-ratio scale
     from sklearn.metrics import roc_auc_score
     from statsmodels.stats.outliers_influence import variance_inflation_factor
     X = m.model.exog
@@ -75,14 +71,14 @@ def rq2(df, feats=FEATS):
     events = int(m.model.endog.sum())
     return {"n": int(m.nobs), "odds_ratios": np.exp(m.params).to_dict(), "p": m.pvalues.to_dict(), "pseudo_r2": m.prsquared,
             "ci_low": ci[0].to_dict(), "ci_high": ci[1].to_dict(),
-            "auc": float(roc_auc_score(m.model.endog, m.predict())),        # in-sample discrimination
+            "auc": float(roc_auc_score(m.model.endog, m.predict())),        # in-sample
             "events": events, "events_per_parameter": events / (len(m.params) - 1), "max_vif": max(vif.values()), "vif": vif}
 
 def rq3(df):
     pub, pvt = df.loc[df["facility_type"] == 1, "log_oop"], df.loc[df["facility_type"] == 3, "log_oop"]
     t = stats.ttest_ind(pub, pvt, equal_var=False)
     v1, v2 = pub.var() / len(pub), pvt.var() / len(pvt)
-    welch_df = (v1 + v2) ** 2 / (v1 ** 2 / (len(pub) - 1) + v2 ** 2 / (len(pvt) - 1))   # for APA t(df)
+    welch_df = (v1 + v2) ** 2 / (v1 ** 2 / (len(pub) - 1) + v2 ** 2 / (len(pvt) - 1))   # Welch df
     sd = np.sqrt((pub.var() + pvt.var()) / 2)
     return {"n_public": len(pub), "n_private": len(pvt), "median_oop_public": float(np.expm1(pub.median())),
             "median_oop_private": float(np.expm1(pvt.median())), "welch_t": t.statistic, "welch_df": float(welch_df), "p": t.pvalue,
@@ -93,7 +89,7 @@ def load_round(round_):
     return pd.read_csv(f).dropna(subset=["log_oop", "annual_consumption"]) if f.exists() else None
 
 def rq4():
-    """CHE rate, 2017-18 (nss75) vs 2025 (nss80). Needs both episode files (run step 1 for each round)."""
+    """CHE 2017-18 vs 2025."""
     d75, d80 = load_round("nss75"), load_round("nss80")
     if d75 is not None and d80 is not None:
         both = pd.concat([d75.assign(survey_2025=0), d80.assign(survey_2025=1)], ignore_index=True)

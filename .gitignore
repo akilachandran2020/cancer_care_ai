@@ -1,12 +1,13 @@
-# Survey microdata and episode-level files derived from it are NEVER published (MoSPI terms of use)
+# Survey microdata
 data/raw/**/*.csv
 data/raw/**/*.zip
 data/processed/*.csv
 outputs/*
 !outputs/README.md
-# Aggregate results only (no episode rows) - safe to publish
+# Aggregate results
 !outputs/results.json
 !outputs/results_by_round.json
+!outputs/design_based_check.json
 !outputs/figure1_coverage.csv
 !outputs/figure1_coverage.png
 !outputs/report/

@@ -1,5 +1,4 @@
-"""Step 4 - Export the episode files to SPSS (.sav) with variable and value labels, for spss/rq2_rq4.sps.
-Writes outputs/spss/cancer_2025.sav (primary round: RQ2, RQ3, descriptives) and outputs/spss/cancer_2017_2025.sav (RQ4)."""
+"""Step 4 - Export episode files to SPSS (.sav)."""
 import pandas as pd, pyreadstat
 from config import PROCESSED, OUTPUTS, PRIMARY
 
@@ -32,7 +31,7 @@ def main():
     if f75.exists() and f80.exists():
         d17, d25 = pd.read_csv(f75), pd.read_csv(f80)
         cols = ["che", "facility_public", "facility_type", "sector_urban", "mpce_quintile", "weight", "oop_medical", "psu", "stratum"]
-        # strata and FSUs are coded apart in each round so no unit is shared between the two surveys
+        # offset codes so rounds share no strata or FSUs
         both = pd.concat([d17[cols].assign(survey_2025=0), d25[cols].assign(survey_2025=1, stratum=d25["stratum"] + 100000,
                          psu=d25["psu"] + 10000000)], ignore_index=True)
         save(both, "cancer_2017_2025.sav")
