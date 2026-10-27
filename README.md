@@ -37,7 +37,11 @@ python 08_design_based_check.py     # -> outputs/design_based_check.json: weight
 python 07_compare_rounds.py           # same models on 2017-18 and 2025 with the same 14 features
 # -> outputs/results_by_round.json, outputs/report/table_by_round.csv, table_rq2_or_by_round.csv
 python 06_report_outputs.py           # -> outputs/report/ (cleaning log, EDA tables, Figures 2-11)
+python 09_robustness_checks.py        # -> outputs/robustness_checks.json: stronger linear baseline, model without stay,
+# sex audit on recorded sex, CHE of episodes with no person record, case-mix-adjusted RQ3, RQ4 design effects,
+# FSU-clustered RQ1 and RQ2 tests and sample-size sensitivity (report Tables 2 and 18)
 ```
+Run `02_sample_size.py` again after `08_design_based_check.py` to print the RQ4 design effects and effective sample sizes.
 
 ## 3. SPSS (descriptives and RQ2-RQ4) - work in progress!
 Open `spss/rq2_rq4.sps` in IBM SPSS Statistics (27 or later; Complex Samples module for the weighted
@@ -47,10 +51,10 @@ estimates), set the FILE HANDLE path to your `outputs/spss` folder, and run all.
 prediction intervals) runs in Python only.
 
 ## 4. Unit tests
-`python -m pytest -q` (from the repository root) runs 16 tests in `tests/` on small synthetic tables: the CHE
+`python -m pytest -q` (from the repository root) runs 22 tests in `tests/` on small synthetic tables: the CHE
 threshold, OOPE clipping, missing coverage for members who died or left, place-of-treatment flags, survey weights,
 no cost columns among the model features, the RQ2 model and its AUC, the Welch degrees of freedom and the
-shared-feature selection used by the cross-round comparison. They never read the survey microdata.
+shared-feature selection used by the cross-round comparison, and the design-effect and robustness-check functions. They never read the survey microdata.
 
 ## 5. Smoke test
 `python 00_make_smoketest_data.py` writes clearly labelled SYNTHETIC files with the real column names so

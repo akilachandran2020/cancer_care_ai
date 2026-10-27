@@ -8,6 +8,7 @@ outputs/*
 !outputs/results.json
 !outputs/results_by_round.json
 !outputs/design_based_check.json
+!outputs/robustness_checks.json
 !outputs/figure1_coverage.csv
 !outputs/figure1_coverage.png
 !outputs/report/

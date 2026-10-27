@@ -175,3 +175,57 @@ def test_design_based_mean_matches_weighted_mean_and_has_positive_se():
     p, se, dof = chk.design_mean(df, "che")
     assert p == pytest.approx((df.weight * df.che).sum() / df.weight.sum())
     assert se > 0 and dof == 2
+
+
+def test_design_effects_match_report_formula():
+    import importlib
+    rob = importlib.import_module("09_robustness_checks")
+    res = {"nss75": {"weighted_che": .63, "n": 1600, "se": .036},
+           "nss80": {"weighted_che": .53, "n": 3300, "se": .029},
+           "difference": {"se_points": 4.6}}
+    d = rob.design_effects(res)
+    srs_se = (.63 * .37 / 1600) ** .5
+    assert d["nss75"]["deff"] == pytest.approx((.036 / srs_se) ** 2)
+    assert d["nss75"]["n_effective"] == pytest.approx(1600 / d["nss75"]["deff"])
+    assert d["n_required_per_survey_srs"] == pytest.approx(170.9, abs=0.1)     # Table 2, RQ4
+    assert 0 < d["design_power_15pt_fall"] < 1
+
+
+def test_robustness_checks_run_on_synthetic_episodes(episodes):
+    import importlib
+    rob = importlib.import_module("09_robustness_checks")
+    ep = episodes.assign(psu=np.arange(len(episodes)) % 40)
+    stronger = rob.linear_design(ep[rob.FEATS].fillna(0), rob.FEATS, log_stay=True)
+    assert {"log_stay", "public_x_log_stay"} <= set(stronger.columns)
+    assert "stay_days" not in [f for f in rob.FEATS if f != "stay_days"]
+    gone = rob.died_or_left(ep)
+    assert gone["died_or_left"]["n"] == int(ep["member_deceased"].sum())
+    assert gone["died_or_left"]["n"] + gone["others"]["n"] == len(ep)
+    adj = rob.rq3_adjusted(ep)
+    assert adj["n"] == int(ep["facility_type"].isin([1, 3]).sum())
+    assert adj["adjusted"]["ci_low"] < adj["adjusted"]["b"] < adj["adjusted"]["ci_high"]
+    err = pd.Series(np.abs(np.random.default_rng(0).normal(size=len(ep))))
+    audit = rob.sex_audit(ep, err.to_numpy())
+    assert audit["n_known"] + audit["n_imputed"] == len(ep)
+    assert audit["male"]["n"] + audit["female"]["n"] == audit["n_known"]
+
+
+def test_sample_size_sensitivity_matches_table_2():
+    import importlib
+    rob = importlib.import_module("09_robustness_checks")
+    s = rob.sample_size_sensitivity()
+    assert s["rq1_dz"]["0.2"] == 199 and s["rq2_or"]["1.5"] == 293
+    assert s["rq3_d_per_group"]["0.3"] == 176 and s["rq4_p2025_per_survey"]["0.48"] == 171
+    assert s["rq3_d_per_group"]["0.2"] > s["rq3_d_per_group"]["0.3"]
+
+
+def test_rq1_clustered_se_is_at_least_srs_for_clustered_errors():
+    import importlib
+    rob = importlib.import_module("09_robustness_checks")
+    rng = np.random.default_rng(3)
+    psu = np.repeat(np.arange(40), 10)
+    shift = rng.normal(0, 1, 40)[psu]                      # errors share a cluster effect
+    df = pd.DataFrame({"psu": psu, "stratum": psu % 4})
+    r = rob.rq1_clustered(df, rng.normal(1, .5, 400) + shift, rng.normal(1.2, .5, 400))
+    assert r["se_clustered"] > r["se_srs"] and r["deff"] > 1
+

@@ -13,3 +13,4 @@ MoSPI microdata; run the scripts to regenerate them.
 | `report/table_by_round.csv`, `report/table_rq2_or_by_round.csv` | `07_compare_rounds.py` | Side-by-side 2017–18 vs 2025 summary and RQ2 odds ratios |
 | `design_based_check.json` | `08_design_based_check.py` | Weighted CHE in each round with design-based SEs (strata + clusters) and the RQ4 difference; cross-check for SPSS |
 | `report/` (other files) | `06_report_outputs.py` | Cleaning log, EDA tables and Figures 2–11 for the primary round |
+| `robustness_checks.json` | `09_robustness_checks.py` | Robustness checks (report Table 18): stronger baseline, model without stay, sex audit, excluded episodes, adjusted RQ3, RQ4 design effects |
