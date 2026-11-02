@@ -2,6 +2,8 @@
 data/raw/**/*.csv
 data/raw/**/*.zip
 data/processed/*.csv
+data/db/
+models/
 outputs/*
 !outputs/README.md
 # Aggregate results
@@ -15,3 +17,7 @@ outputs/*
 # Python
 __pycache__/
 .venv/
+!outputs/final_models.json
+!outputs/price_threshold_sensitivity.json
+!outputs/design_based_models.json
+!outputs/database_summary.json

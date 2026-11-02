@@ -6,6 +6,8 @@ PRIMARY = "nss80"          # primary survey (2025)
 RAW = ROOT / "data/raw" / ROUND
 PROCESSED = ROOT / "data/processed"
 OUTPUTS = ROOT / "outputs"
+DB_PATH = ROOT / "data/db/cancer_care.db"      # SQLite database built by 10_build_database.py (git-ignored)
+MODELS = ROOT / "models"                       # fitted models written by 11_final_models.py (git-ignored)
 SEED = 42
 
 # MoSPI CSV files
@@ -21,3 +23,8 @@ HH_KEY = ["FSU", "Hamlet_Sub_block", "Second_stage_stratum", "Sample_hhld"]
 CASE_KEY = HH_KEY + ["Srl_no_of_hospitalisation_case"]
 CANCER_CODE = 13            # cancer
 CHE_THRESHOLD = 0.10        # 10% of annual consumption
+
+# Consumer Price Index, Combined (all-India), General, base 2012 = 100, annual averages.
+# Source: Government of India, Economic Survey 2025-26, Statistical Table 4.3.
+CPI = {"2017-18": 135, "2024-25": 193}
+CPI_FACTOR = CPI["2024-25"] / CPI["2017-18"]   # 2017-18 rupees -> 2024-25 rupees (approximates 2025 prices)
