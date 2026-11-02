@@ -49,10 +49,13 @@ if go:
     if consumption:
         p["annual_consumption"] = consumption
     r = companion.estimate(p, B)
+    st.subheader("Estimated out-of-pocket cost")
     m1, m2, m3 = st.columns(3)
-    m1.metric("Typical cost", f"₹{r['cost_typical_rupees']:,.0f}")
-    m2.metric("80% range", f"₹{r['cost_low_rupees']:,.0f} to ₹{r['cost_high_rupees']:,.0f}")
-    m3.metric("Catastrophic-cost risk", r["che_risk"], f"{100 * r['che_probability']:.0f}% chance")
+    m1.metric("Low end", f"₹{r['cost_low_rupees']:,.0f}")
+    m2.metric("Typical", f"₹{r['cost_typical_rupees']:,.0f}")
+    m3.metric("High end", f"₹{r['cost_high_rupees']:,.0f}")
+    st.caption("Low end to high end is the 80% range: about 8 in 10 similar hospitalizations fall inside it.")
+    st.metric("Catastrophic-cost risk", r["che_risk"], f"{100 * r['che_probability']:.0f}% chance", delta_color="off")
     if r["che_flag"]:
         st.warning("Flag: this hospitalization is likely to take more than 10% of the household's annual consumption.")
     if "share_of_annual_consumption" in r:
@@ -62,6 +65,6 @@ if go:
     for k, title in (("raises_cost", "Raises the estimate"), ("lowers_cost", "Lowers the estimate")):
         st.write(f"**{title}:** " + (", ".join(n for n, _ in r["drivers"][k]) or "no single dominant factor"))
     st.subheader("Financial-aid checklist")
-    for item in r["checklist"]:
-        st.checkbox(item, key=item)
+    st.caption("Questions to ask and documents to gather. Items are suggestions, not eligibility decisions.")
+    st.markdown("\n".join(f"{i}. {item}" for i, item in enumerate(r["checklist"], 1)))
     st.caption(r["disclaimer"])
