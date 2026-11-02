@@ -1,3 +1,4 @@
+* Encoding: windows-1252.
 * AI Cancer Care Companion - SPSS syntax for design-based (survey-weighted) RQ2-RQ4.
 * 1. Run src/04_export_for_spss.py (writes outputs/spss/*.sav).  2. Set the folder in FILE HANDLE below.
 * 3. Run > All.  Needs IBM SPSS Statistics 27 or later with the Complex Samples module.
@@ -59,13 +60,12 @@ CSLOGISTIC che (LOW) BY q_ref social_ref WITH age female sector_urban facility_p
   /MISSING CLASSMISSING=EXCLUDE
   /CRITERIA MXITER=100 MXSTEP=5 PCONVERGE=[1E-006 RELATIVE] LCONVERGE=[0] CHKSEP=20 CILEVEL=95.
 
-* RQ3: design-based comparison of mean ln(OOPE + 1) between hospital types (pairwise contrasts).
+* RQ3: design-based comparison of mean ln(OOPE + 1) between hospital types.
 CSGLM log_oop BY facility_type
   /PLAN FILE='spssdir/plan_2025.csaplan'
   /MODEL facility_type
   /INTERCEPT INCLUDE=YES SHOW=YES
   /STATISTICS PARAMETER SE CINTERVAL
-  /EMMEANS TABLES=facility_type COMPARE=facility_type CONTRAST=PAIRWISE
   /CRITERIA CILEVEL=95.
 
 * ---------- RQ4: 2017-18 vs 2025 ----------.
@@ -95,7 +95,6 @@ CSGLM che BY survey_2025
   /MODEL survey_2025
   /INTERCEPT INCLUDE=YES SHOW=YES
   /STATISTICS PARAMETER SE CINTERVAL
-  /EMMEANS TABLES=survey_2025 COMPARE=survey_2025 CONTRAST=PAIRWISE
   /CRITERIA CILEVEL=95.
 
 * RQ4 adjusted: design-based logistic regression of CHE on survey round, adjusting for quintile, sector and hospital type.

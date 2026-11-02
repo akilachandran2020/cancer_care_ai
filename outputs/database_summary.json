@@ -1,5 +1,5 @@
 {
-  "database": "data/db/cancer_care.db",
+  "database": "data\\db\\cancer_care.db",
   "size_kb": 712.0,
   "integrity_checks": {
     "nss75": {
