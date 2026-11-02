@@ -1,0 +1,67 @@
+"""Streamlit front end for the AI Cancer Care Companion prototype.
+Run from the repository root:  streamlit run app/companion_app.py
+Needs models/companion_models.joblib (python src/11_final_models.py)."""
+import importlib, pathlib, sys
+import streamlit as st
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+companion = importlib.import_module("14_companion")
+
+st.set_page_config(page_title="AI Cancer Care Companion", page_icon="🩺", layout="centered")
+st.title("AI Cancer Care Companion")
+st.caption("Early cost range and financial-risk flag for a cancer hospitalization in India (prototype).")
+
+
+@st.cache_resource
+def bundle():
+    return companion.load_bundle()
+
+
+try:
+    B = bundle()
+except FileNotFoundError as e:
+    st.error(str(e)); st.stop()
+
+with st.form("patient"):
+    c1, c2 = st.columns(2)
+    age = c1.number_input("Patient age (years)", 0, 100, 54)
+    sex = c1.selectbox("Sex", ["Female", "Male"])
+    sector = c1.selectbox("Residence", ["Rural", "Urban"])
+    hh = c1.number_input("Household size", 1, 20, 5)
+    quint = c1.selectbox("Household consumption quintile (1 = poorest)", [1, 2, 3, 4, 5], index=1)
+    social = c1.selectbox("Social group", ["Scheduled Tribe", "Scheduled Caste", "Other Backward Class", "Other"], index=2)
+    hospital = c2.selectbox("Hospital type", ["Public", "Private or charitable"], index=1)
+    ward = c2.selectbox("Ward", ["Free", "Paying general", "Paying special"], index=1)
+    stay = c2.number_input("Expected length of stay (days)", 1, 120, 10)
+    surgery = c2.checkbox("Surgery planned", True)
+    district = c2.checkbox("Treatment outside home district", True)
+    state = c2.checkbox("Treatment outside home state", False)
+    insured = c2.checkbox("Covered by a health scheme (for example PM-JAY)", False)
+    consumption = st.number_input("Household annual consumption in rupees (optional, 0 to skip)", 0, 5_000_000, 180_000, step=10_000)
+    go = st.form_submit_button("Estimate")
+
+if go:
+    p = {"age": age, "female": int(sex == "Female"), "sector_urban": int(sector == "Urban"), "facility_public": int(hospital == "Public"),
+         "ward_type": ["Free", "Paying general", "Paying special"].index(ward) + 1, "stay_days": stay, "surgery_received": int(surgery),
+         "outside_district": int(district or state), "outside_state": int(state), "insured": int(insured), "mpce_quintile": quint,
+         "social_group": {"Scheduled Tribe": 1, "Scheduled Caste": 2, "Other Backward Class": 3, "Other": 9}[social], "hh_size": hh}
+    if consumption:
+        p["annual_consumption"] = consumption
+    r = companion.estimate(p, B)
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Typical cost", f"₹{r['cost_typical_rupees']:,.0f}")
+    m2.metric("80% range", f"₹{r['cost_low_rupees']:,.0f} to ₹{r['cost_high_rupees']:,.0f}")
+    m3.metric("Catastrophic-cost risk", r["che_risk"], f"{100 * r['che_probability']:.0f}% chance")
+    if r["che_flag"]:
+        st.warning("Flag: this hospitalization is likely to take more than 10% of the household's annual consumption.")
+    if "share_of_annual_consumption" in r:
+        s = r["share_of_annual_consumption"]
+        st.info(f"Medical cost alone: about {100 * s['typical']:.0f}% of annual consumption (typical) and {100 * s['high']:.0f}% (high end).")
+    st.subheader("What drives this estimate")
+    for k, title in (("raises_cost", "Raises the estimate"), ("lowers_cost", "Lowers the estimate")):
+        st.write(f"**{title}:** " + (", ".join(n for n, _ in r["drivers"][k]) or "no single dominant factor"))
+    st.subheader("Financial-aid checklist")
+    for item in r["checklist"]:
+        st.checkbox(item, key=item)
+    st.caption(r["disclaimer"])

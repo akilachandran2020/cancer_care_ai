@@ -22,6 +22,6 @@ jobs:
           sed -i 's/^ROUND = .*/ROUND = "nss75"/' config.py   # the smoke data is in 2017-18 layout
           python 00_make_smoketest_data.py
           python 02_sample_size.py
-          python 01_build_cancer_episodes.py
+          python 01_build_cancer_episodes.py nss75
           python 03_models_and_tests.py
           python 06_report_outputs.py

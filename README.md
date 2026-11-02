@@ -40,6 +40,12 @@ python 06_report_outputs.py           # -> outputs/report/ (cleaning log, EDA ta
 python 09_robustness_checks.py        # -> outputs/robustness_checks.json: stronger linear baseline, model without stay,
 # sex audit on recorded sex, CHE of episodes with no person record, case-mix-adjusted RQ3, RQ4 design effects,
 # FSU-clustered RQ1 and RQ2 tests and sample-size sensitivity (report Tables 2 and 18)
+python 10_build_database.py          # -> data/db/cancer_care.db (SQLite, git-ignored) + outputs/database_summary.json
+python 11_final_models.py             # 80/20 FSU-grouped split, tuning, neural-net baseline, intervals, two-part model, CHE classifiers -> outputs/final_models.json, models/ (long run; --n-iter 20)
+python 12_price_and_threshold_sensitivity.py   # CPI-adjusted costs and CHE threshold sensitivity -> outputs/price_threshold_sensitivity.json
+python 13_design_based_models.py      # Python replica of the SPSS Complex Samples analysis -> outputs/design_based_models.json
+python 15_pipeline_diagram.py         # -> outputs/report/fig_pipeline.png
+python 14_companion.py                # prototype demo; web form: streamlit run app/companion_app.py
 ```
 Run `02_sample_size.py` again after `08_design_based_check.py` to print the RQ4 design effects and effective sample sizes.
 

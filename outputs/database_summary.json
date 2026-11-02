@@ -1,0 +1,130 @@
+{
+  "database": "data\\db\\cancer_care.db",
+  "size_kb": 712.0,
+  "integrity_checks": {
+    "nss75": {
+      "rows_db": 1606,
+      "rows_csv": 1606,
+      "che_sum_match": true,
+      "all_match": true
+    },
+    "nss80": {
+      "rows_db": 3283,
+      "rows_csv": 3283,
+      "che_sum_match": true,
+      "all_match": true
+    }
+  },
+  "che_by_survey": [
+    {
+      "survey": "nss75",
+      "n": 1606,
+      "che_pct": 70.4,
+      "che_weighted_pct": 63.1,
+      "mean_oope": 66911.0
+    },
+    {
+      "survey": "nss80",
+      "n": 3283,
+      "che_pct": 59.4,
+      "che_weighted_pct": 52.7,
+      "mean_oope": 81256.0
+    }
+  ],
+  "che_by_hospital": [
+    {
+      "survey": "nss75",
+      "facility_type": 1,
+      "n": 651,
+      "che_pct": 56.8,
+      "mean_oope": 29259.0
+    },
+    {
+      "survey": "nss75",
+      "facility_type": 2,
+      "n": 87,
+      "che_pct": 58.6,
+      "mean_oope": 74429.0
+    },
+    {
+      "survey": "nss75",
+      "facility_type": 3,
+      "n": 868,
+      "che_pct": 81.8,
+      "mean_oope": 94396.0
+    },
+    {
+      "survey": "nss80",
+      "facility_type": 1,
+      "n": 1232,
+      "che_pct": 41.5,
+      "mean_oope": 30812.0
+    },
+    {
+      "survey": "nss80",
+      "facility_type": 2,
+      "n": 258,
+      "che_pct": 58.5,
+      "mean_oope": 75856.0
+    },
+    {
+      "survey": "nss80",
+      "facility_type": 3,
+      "n": 1793,
+      "che_pct": 71.8,
+      "mean_oope": 116694.0
+    }
+  ],
+  "tables": [
+    "build_log",
+    "data_dictionary",
+    "episodes",
+    "v_che_by_hospital",
+    "v_che_by_survey"
+  ],
+  "indexes": [
+    "ix_ep_design",
+    "ix_ep_facility",
+    "ix_ep_survey"
+  ],
+  "schema_columns": {
+    "episodes": [
+      "survey",
+      "state_region",
+      "sector_urban",
+      "age",
+      "female",
+      "social_group",
+      "hh_size",
+      "hh_monthly_consumption",
+      "facility_public",
+      "facility_type",
+      "ward_type",
+      "stay_days",
+      "surgery_received",
+      "place_code",
+      "insured",
+      "member_deceased",
+      "medical_exp",
+      "transport_exp",
+      "other_nonmed_exp",
+      "reimbursed",
+      "major_finance",
+      "income_loss",
+      "weight",
+      "psu",
+      "stratum",
+      "outside_state",
+      "outside_district",
+      "oop_medical",
+      "oop_total",
+      "log_oop",
+      "annual_consumption",
+      "mpce",
+      "mpce_quintile",
+      "che",
+      "distress_financing",
+      "total_exp"
+    ]
+  }
+}
