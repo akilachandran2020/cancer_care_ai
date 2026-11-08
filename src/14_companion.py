@@ -51,14 +51,29 @@ def validate(p):
     return bad
 
 
+HIDDEN = {"member_deceased"}   # model feature the app always sets to 0 (living patient); never entered, so never shown as a driver
+VALUE_LABELS = {"female": ("Male", "Female"), "sector_urban": ("Rural residence", "Urban residence"),
+                "facility_public": ("Private or charitable hospital", "Public hospital"), "surgery_received": ("No surgery", "Surgery planned"),
+                "outside_district": ("Treated in home district", "Treated outside home district"),
+                "outside_state": ("Treated in home state", "Treated outside home state"),
+                "insured": ("No scheme coverage", "Covered by a health scheme")}
+
+
+def label(k, row):
+    """Name a driver by the patient's own value (e.g. 'No scheme coverage'), not just the variable."""
+    v = row.iloc[0][k]
+    return VALUE_LABELS[k][int(v)] if k in VALUE_LABELS and v in (0, 1) else LABELS[k]
+
+
 def drivers(bundle, row, top=3):
-    """Top factors raising and lowering the cost estimate (tree-SHAP contributions of the XGBoost explainer, log scale)."""
+    """Top factors raising and lowering the cost estimate (tree-SHAP contributions of the XGBoost explainer, log scale).
+    Only the inputs the user entered are ranked; HIDDEN features are excluded."""
     ex = bundle["explainer"]
     X = ex.named_steps["prep"].transform(row)
     contrib = ex.named_steps["m"].get_booster().predict(xgb.DMatrix(X), pred_contribs=True)[0][:-1]
-    items = sorted(zip(bundle["feats"], contrib), key=lambda kv: kv[1])
-    up = [(LABELS[k], float(v)) for k, v in items[::-1][:top] if v > 0.02]
-    down = [(LABELS[k], float(v)) for k, v in items[:top] if v < -0.02]
+    items = sorted(((k, v) for k, v in zip(bundle["feats"], contrib) if k not in HIDDEN), key=lambda kv: kv[1])
+    up = [(label(k, row), float(v)) for k, v in items[::-1][:top] if v > 0.02]
+    down = [(label(k, row), float(v)) for k, v in items[:top] if v < -0.02]
     return {"raises_cost": up, "lowers_cost": down}
 
 

@@ -34,20 +34,22 @@ except FileNotFoundError as e:
 
 with st.form("patient"):
     c1, c2 = st.columns(2)
-    age = c1.number_input("Patient age (years)", 0, 100, 54)
+    age = c1.number_input("Patient age (years)", 0, 100, 54, help="Whole years, 0 to 100.")
     sex = c1.selectbox("Sex", ["Female", "Male"])
     sector = c1.selectbox("Residence", ["Rural", "Urban"])
-    hh = c1.number_input("Household size", 1, 20, 5)
+    hh = c1.number_input("Household size", 1, 20, 5, help="Number of household members, 1 to 20.")
     quint = c1.selectbox("Household consumption quintile (1 = poorest)", [1, 2, 3, 4, 5], index=1)
     social = c1.selectbox("Social group", ["Scheduled Tribe", "Scheduled Caste", "Other Backward Class", "Other"], index=2)
     hospital = c2.selectbox("Hospital type", ["Public", "Private or charitable"], index=1)
     ward = c2.selectbox("Ward", ["Free", "Paying general", "Paying special"], index=1)
-    stay = c2.number_input("Expected length of stay (days)", 1, 120, 10)
+    stay = c2.number_input("Expected length of stay (days)", 1, 120, 10, help="1 to 120 days.")
     surgery = c2.checkbox("Surgery planned", True)
     district = c2.checkbox("Treatment outside home district", True)
     state = c2.checkbox("Treatment outside home state", False)
     insured = c2.checkbox("Covered by a health scheme (for example PM-JAY)", False)
-    consumption = st.number_input("Household annual consumption in rupees (optional, 0 to skip)", 0, 5_000_000, 180_000, step=10_000)
+    consumption = st.number_input("Household annual consumption in rupees (optional, 0 to skip)", 0, 5_000_000, 180_000, step=10_000,
+                                  help="0 to 50,00,000 rupees a year; enter 0 to skip.")
+    st.caption("If a box turns red, the value is outside its allowed range; hover over the ⓘ next to the label to see the range.")
     go = st.form_submit_button("Estimate")
 
 if go:
@@ -69,7 +71,8 @@ if go:
         st.warning("Flag: this hospitalization is likely to take more than 10% of the household's annual consumption.")
     if "share_of_annual_consumption" in r:
         s = r["share_of_annual_consumption"]
-        st.info(f"Medical cost alone: about {100 * s['typical']:.0f}% of annual consumption (typical) and {100 * s['high']:.0f}% (high end).")
+        pct = lambda v: "under 1%" if v < .005 else f"about {100 * v:.0f}%"
+        st.info(f"Medical cost alone: {pct(s['typical'])} of annual consumption (typical) and {pct(s['high'])} (high end).")
     st.subheader("What drives this estimate")
     for k, title in (("raises_cost", "Raises the estimate"), ("lowers_cost", "Lowers the estimate")):
         st.write(f"**{title}:** " + (", ".join(n for n, _ in r["drivers"][k]) or "no single dominant factor"))
