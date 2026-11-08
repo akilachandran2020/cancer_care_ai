@@ -154,7 +154,7 @@ for col, colr, lab in [(0, ORANGE, "Private/charitable"), (1, NAVY, "Public")]:
     ax.plot(fit[:, 0], fit[:, 1], color=colr, lw=2.4, label=f"{lab} (trend)", zorder=4)
 ax.set_xlim(0, 30); ax.set_xticks(range(0, 31, 5)); ax.set_ylim(0, 16); ax.set_yticks(range(0, 17, 4))
 ax.set(xlabel="Length of stay (days)", ylabel="ln(OOPE + 1)")
-rupee_axis(ax, "y"); leg = ax.legend(frameon=False, loc="lower right", fontsize=8.5)
+rupee_axis(ax, "y"); leg = ax.legend(frameon=False, loc="lower right", fontsize=8.5, markerscale=4)
 for h in leg.legend_handles: h.set_alpha(1)            # show the point colours at full strength in the legend
 grid(ax); save(fig, "fig6_oope_by_stay")
 summary["stay_over_30_excluded_from_fig6_n"] = int((d["stay_days"] > 30).sum())

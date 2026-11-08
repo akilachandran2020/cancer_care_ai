@@ -48,8 +48,25 @@ def rupee_axis(ax, which="x"):
         ax.spines["right"].set_visible(True)
     return sec
 
-def save(fig, path):
-    fig.savefig(path); plt.close(fig)
+def save(fig, path, tries=6):
+    """Save a figure. Retries when Windows/OneDrive briefly locks the file (OSError: Errno 22 or 13)."""
+    import os, time, tempfile, pathlib
+    path = pathlib.Path(path)
+    for k in range(tries):
+        tmp = None
+        try:
+            fd, tmp = tempfile.mkstemp(suffix=path.suffix, dir=path.parent); os.close(fd)
+            fig.savefig(tmp)                       # write to a new temp file first
+            os.replace(tmp, path)                  # then swap it in place
+            break
+        except OSError:
+            if tmp and os.path.exists(tmp):
+                try: os.remove(tmp)
+                except OSError: pass
+            if k == tries - 1:
+                raise
+            time.sleep(1 + k)                      # wait for the sync lock to clear
+    plt.close(fig)
 
 
 # Readable subgroup labels for the interval-coverage figure (codes follow the data dictionary)
