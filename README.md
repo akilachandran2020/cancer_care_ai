@@ -49,12 +49,25 @@ python 14_companion.py                # prototype demo; web form: streamlit run 
 ```
 Run `02_sample_size.py` again after `08_design_based_check.py` to print the RQ4 design effects and effective sample sizes.
 
-## 3. SPSS (descriptives and RQ2-RQ4) - work in progress!
-Open `spss/rq2_rq4.sps` in IBM SPSS Statistics (27 or later; Complex Samples module for the weighted
-estimates), set the FILE HANDLE path to your `outputs/spss` folder, and run all. Welch's test is the
-"equal variances not assumed" row; the RQ4 two-proportion test is the Pearson chi-square (chi-square = z^2).
-`03_models_and_tests.py` reruns the same tests in Python as a cross-check. RQ1 (machine learning, SHAP,
-prediction intervals) runs in Python only.
+## 3. SPSS (survey-weighted RQ2-RQ4)
+Run `python src/04_export_for_spss.py` first; it writes `outputs/spss/cancer_2025.sav` and `cancer_2017_2025.sav`
+(git-ignored, because they hold survey microdata). Open `spss/rq2_rq4.sps` in IBM SPSS Statistics 27 or later with
+the Complex Samples module, set the FILE HANDLE path to your `outputs/spss` folder, and choose Run > All in a fresh
+session. The syntax builds the sampling plan (strata = NSS region x sector, clusters = FSU, survey weight,
+with-replacement estimator) and runs:
+
+| Procedure | Purpose |
+|---|---|
+| CSDESCRIPTIVES | Weighted mean OOPE and CHE rate, 2025, overall and by hospital type |
+| CSLOGISTIC | RQ2: CHE on ln(stay) and the other predictors (final model); same model with stay in days (interim comparison) |
+| CSGLM | RQ3: mean ln(OOPE + 1) by hospital type (public vs. private contrast) |
+| CSDESCRIPTIVES, CSGLM | RQ4: weighted CHE rate in each round and the 2025 minus 2017-18 difference |
+| CSLOGISTIC, LOGISTIC | RQ4: survey round adjusted for quintile, sector and hospital type; unweighted check |
+
+The output is in `spss/SPSS_Output.pdf`; every value matches the Python replica (`src/13_design_based_models.py`,
+report Table A2). SPSS uses the highest code as the reference category, so it reports RQ3 as public minus private and
+RQ4 as 2017-18 relative to 2025 (OR 1.828 = 1 / 0.547). The unweighted tests (Welch, Mann-Whitney, two-proportion
+z-test, Box-Tidwell, VIF) and RQ1 (machine learning, SHAP, prediction intervals) run in Python (`03`, `11`).
 
 ## 4. Unit tests
 `python -m pytest -q` (from the repository root) runs 22 tests in `tests/` on small synthetic tables: the CHE
