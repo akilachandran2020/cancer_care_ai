@@ -485,6 +485,10 @@ def rq2_final(df, tr, te):
 
 
 # --------------------------------------------------------------------------------------------------- figures
+MODEL_NAMES = {"linear": "Linear", "random_forest": "Random forest", "lightgbm": "LightGBM", "xgboost": "XGBoost",
+               "mlp": "Neural network (MLP)", "logistic": "Logistic regression"}
+
+
 def figures(out, df, te, y_te_reg, preds_te, best, probs, ycls, interval_te, fitted_cls, cls_best):
     REPORT.mkdir(parents=True, exist_ok=True)
     import matplotlib.pyplot as plt
@@ -497,13 +501,16 @@ def figures(out, df, te, y_te_reg, preds_te, best, probs, ycls, interval_te, fit
                 yy = ytr if idx == 0 else yte
                 f, t, _ = roc_curve(yy, probs[cls_best][idx])
                 ax.plot(f, t, color=col, lw=2, label=f"{nm} (AUC = {roc_auc_score(yy, probs[cls_best][idx]):.2f})")
+            sel = out["classifier"][cls_best]["test_at_youden"]           # operating point at the training-derived threshold
+            ax.plot(1 - sel["specificity"], sel["recall"], "o", color="black", ms=6, zorder=5,
+                    label=f"Selected threshold {sel['threshold']:.3f} (test)")
         else:
             for nm, col in zip(probs, (ps.NAVY, ps.ORANGE, ps.MID)):
                 f, t, _ = roc_curve(yte, probs[nm][1])
-                ax.plot(f, t, color=col, lw=2, label=f"{nm.replace('_', ' ').title()} (AUC = {roc_auc_score(yte, probs[nm][1]):.2f})")
+                ax.plot(f, t, color=col, lw=2, label=f"{MODEL_NAMES.get(nm, nm)} (AUC = {roc_auc_score(yte, probs[nm][1]):.2f})")
         ax.plot([0, 1], [0, 1], ls="--", color="#999999", lw=1, label="Chance")
         ax.set_xlabel("False-positive rate"); ax.set_ylabel("True-positive rate"); ax.set_title(lab, fontsize=10, loc="left")
-        ax.legend(loc="lower right", frameon=False); ps.grid(ax, "both")
+        ax.legend(loc="lower right", frameon=False, fontsize=8); ps.grid(ax, "both")
     ps.save(fig, REPORT / "fig12_roc_curves.png")
     # Fig 13: confusion matrix of the best classifier on the test part at the training-derived threshold
     cm = out["classifier"][cls_best]["test_at_youden"]["confusion"]
@@ -516,6 +523,8 @@ def figures(out, df, te, y_te_reg, preds_te, best, probs, ycls, interval_te, fit
                     color="white" if mat[i, j] > mat.max() / 2 else "black", fontsize=10)
     ax.set_xticks([0, 1], ["No CHE", "CHE"]); ax.set_yticks([0, 1], ["No CHE", "CHE"])
     ax.set_xlabel("Predicted"); ax.set_ylabel("Actual"); ax.spines[:].set_visible(False)
+    ax.set_title(f"{MODEL_NAMES.get(cls_best, cls_best)}, threshold = {out['classifier'][cls_best]['test_at_youden']['threshold']:.3f}",
+                 fontsize=9, loc="left")
     ps.save(fig, REPORT / "fig13_confusion_matrix.png")
     # Fig 14: train vs test MAE for every model (tuned)
     names = list(out["regression"]["models"])
@@ -525,32 +534,33 @@ def figures(out, df, te, y_te_reg, preds_te, best, probs, ycls, interval_te, fit
     te_ = [out["regression"]["models"][n]["tuned"]["test"]["mae_log"] for n in names]
     ax.bar(xs - w / 2, tr_, w, color=ps.NAVY, label="Training"); ax.bar(xs + w / 2, te_, w, color=ps.ORANGE, label="Test")
     for x, a, b in zip(xs, tr_, te_):
-        ax.text(x - w / 2, a + .03, f"{a:.2f}", ha="center", fontsize=8); ax.text(x + w / 2, b + .03, f"{b:.2f}", ha="center", fontsize=8)
-    ax.set_xticks(xs, [n.replace("_", " ").replace("mlp", "neural network (MLP)").title().replace("Lightgbm", "LightGBM").replace("Xgboost", "XGBoost") for n in names], rotation=12)
-    ax.set_ylabel("MAE on ln(OOPE + 1)"); ax.legend(frameon=False); ps.grid(ax)
+        for xx, v in ((x - w / 2, a), (x + w / 2, b)):
+            ax.text(xx, v + .03, f"{v:.2f}", ha="center", fontsize=8, zorder=6, bbox=dict(facecolor="white", edgecolor="none", pad=.5))
+    ax.set_xticks(xs, [MODEL_NAMES.get(n, n) for n in names])
+    base = out["regression"]["models"]["linear"]["tuned"]["test"]["mae_log"]
+    ax.axhline(base, color="#555555", lw=1, ls="--", zorder=4, label=f"Linear baseline, test ({base:.2f})")
+    ax.set_xlabel("Model"); ax.set_ylabel("MAE on ln(OOPE + 1)"); ps.grid(ax)
     ps.nice_axis(ax, max(tr_ + te_), 0.5)
+    ax.legend(frameon=False, ncol=3, fontsize=8.5, loc="lower center", bbox_to_anchor=(.5, 1.0))
     ps.save(fig, REPORT / "fig14_train_test_mae.png")
     # Fig 15: predicted vs actual (best model, test part)
     fig, ax = plt.subplots(figsize=(5.2, 4.4))
-    p = preds_te[best]
-    ax.scatter(p, y_te_reg, s=7, alpha=.35, color=ps.NAVY, edgecolors="none")
-    lim = [0, max(p.max(), y_te_reg.max()) + .5]
-    ax.plot(lim, lim, color=ps.ORANGE, lw=1.5, label="Perfect prediction")
-    ax.set_xlabel("Predicted ln(OOPE + 1)"); ax.set_ylabel("Actual ln(OOPE + 1)"); ax.legend(frameon=False, loc="upper left")
+    p = preds_te[best]; lo_i, hi_i = (np.asarray(a) for a in interval_te)
+    inside = (y_te_reg >= lo_i) & (y_te_reg <= hi_i)
+    ax.vlines(p, lo_i, hi_i, color=ps.LIGHT, lw=.8, alpha=.7, zorder=1, label="80% interval (conformal)")
+    ax.scatter(p[inside], y_te_reg[inside], s=8, alpha=.6, color=ps.NAVY, edgecolors="none", zorder=3,
+               label=f"Inside interval ({inside.mean():.1%})")
+    ax.scatter(p[~inside], y_te_reg[~inside], s=10, alpha=.8, color=ps.ORANGE, edgecolors="none", zorder=3,
+               label=f"Outside interval ({(~inside).mean():.1%})")
+    lim = [0, max(p.max(), y_te_reg.max(), hi_i.max()) + .5]
+    ax.plot(lim, lim, color="#555555", lw=1.2, ls="--", zorder=2, label="Perfect prediction")
+    ax.set_xlabel(f"Predicted ln(OOPE + 1), {MODEL_NAMES.get(best, best)}"); ax.set_ylabel("Actual ln(OOPE + 1)")
+    ax.legend(frameon=False, loc="upper left", fontsize=8)
     ps.grid(ax, "both"); ax.set_xlim(lim); ax.set_ylim(lim)
     ps.save(fig, REPORT / "fig15_predicted_vs_actual.png")
     # Fig 16: coverage by group (conformal 80% interval, test part)
-    cov = out["intervals"]["coverage_by_group_test_conformal"]
-    keys = [k for k, v in cov.items() if v["n"] >= 30]
-    fig, ax = plt.subplots(figsize=(8, 4.2))
-    vals = [100 * cov[k]["coverage"] for k in keys]
-    ax.barh(range(len(keys)), vals, color=[ps.NAVY if 75 <= v <= 85 else ps.ORANGE for v in vals])
-    ax.axvspan(75, 85, color=ps.LIGHT, alpha=.45, zorder=0, label="75%-85% target")
-    ax.axvline(80, color="#555555", lw=1, ls="--")
-    ax.set_yticks(range(len(keys)), [f"{k} (n = {cov[k]['n']})" for k in keys], fontsize=8)
-    ax.set_xlabel("Actual costs inside the 80% range (%)"); ax.set_xlim(40, 100); ax.legend(frameon=False, loc="lower right")
-    ax.invert_yaxis(); ps.grid(ax, "x")
-    ps.save(fig, REPORT / "fig16_interval_coverage_by_group.png")
+    ps.coverage_by_group_plot(out["intervals"]["coverage_by_group_test_conformal"],
+                              REPORT / "fig16_interval_coverage_by_group.png")
 
 
 # ------------------------------------------------------------------------------------------------------ main

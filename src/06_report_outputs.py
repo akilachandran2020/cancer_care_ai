@@ -100,16 +100,30 @@ groups = [d.loc[d.facility_type == k, "log_oop"] for k in FAC]
 bp = ax.boxplot(groups, widths=.45, patch_artist=True, medianprops=dict(color=ORANGE, lw=2),
                 flierprops=dict(marker="o", ms=4, mfc="none"))
 for b in bp["boxes"]: b.set_facecolor(LIGHT)
+for k, g in enumerate(groups, 1):                      # label each median (log value and rupees)
+    med = float(np.median(g))
+    ax.text(k + .25, med, f"Median {med:.1f}\n(₹{np.expm1(med):,.0f})", va="center", ha="left", fontsize=7.5, color=ORANGE)
 ax.set_xticks([1, 2, 3], [f"{v}\n(n = {len(g):,})" for v, g in zip(FAC.values(), groups)])
-ax.set(xlabel="Hospital type", ylabel="ln(OOPE + 1)"); ax.set_ylim(0, 16); ax.set_yticks(range(0, 17, 2))
+ax.set(xlabel="Hospital type", ylabel="ln(OOPE + 1)"); ax.set_ylim(0, 16); ax.set_yticks(range(0, 17, 2)); ax.set_xlim(.5, 3.9)
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
+ax.legend(handles=[Patch(facecolor=LIGHT, edgecolor="black", label="Middle 50% of episodes"),
+                   Line2D([], [], color=ORANGE, lw=2, label="Median"),
+                   Line2D([], [], marker="o", mfc="none", color="black", ls="none", ms=4, label="Outlier")],
+          frameon=False, fontsize=8, ncol=3, loc="lower center", bbox_to_anchor=(.5, 1.0))
 rupee_axis(ax, "y"); grid(ax); save(fig, "fig3_log_oope_by_facility")
 
 # Figure 4: CHE by MPCE quintile
 fig, ax = plt.subplots(figsize=(6.2, 3.3))
 q = d.groupby("mpce_quintile")["che"].mean() * 100
-b = ax.bar(q.index, q.values, .6, color=NAVY, zorder=3); ax.bar_label(b, fmt="%.1f%%", padding=2, fontsize=9)
+b = ax.bar(q.index, q.values, .6, color=NAVY, zorder=3)
+for t_ in ax.bar_label(b, fmt="%.1f%%", padding=2, fontsize=9):
+    t_.set_bbox(dict(facecolor="white", edgecolor="none", pad=.5)); t_.set_zorder(6)
 ax.set_xticks(q.index, ["1\n(poorest)", "2", "3", "4", "5\n(richest)"])
+overall = d["che"].mean() * 100                       # demarcation: overall CHE rate
+ax.axhline(overall, color="#555555", lw=1, ls="--", zorder=4, label=f"All episodes ({overall:.1f}%)")
 ax.set(xlabel="Monthly per-capita consumption expenditure quintile", ylabel="Episodes with CHE (%)"); pct_axis(ax); grid(ax)
+ax.legend(frameon=False, loc="upper right", fontsize=8.5)
 save(fig, "fig4_che_by_quintile")
 
 # Figure 5: CHE by hospital type and scheme coverage
@@ -134,12 +148,15 @@ dd = d[d["stay_days"] <= 30]
 rng = np.random.default_rng(42)
 for col, colr, lab in [(0, ORANGE, "Private/charitable"), (1, NAVY, "Public")]:
     gg = dd[dd["facility_public"] == col]
-    ax.scatter(gg["stay_days"] + rng.uniform(-.25, .25, len(gg)), gg["log_oop"], s=6, color=colr, alpha=.15, linewidths=0, zorder=2)
+    ax.scatter(gg["stay_days"] + rng.uniform(-.25, .25, len(gg)), gg["log_oop"], s=6, color=colr, alpha=.15, linewidths=0, zorder=2,
+               label=f"{lab} (episodes, n = {len(gg):,})")
     fit = lowess(gg["log_oop"], gg["stay_days"], frac=.4, return_sorted=True)
     ax.plot(fit[:, 0], fit[:, 1], color=colr, lw=2.4, label=f"{lab} (trend)", zorder=4)
 ax.set_xlim(0, 30); ax.set_xticks(range(0, 31, 5)); ax.set_ylim(0, 16); ax.set_yticks(range(0, 17, 4))
 ax.set(xlabel="Length of stay (days)", ylabel="ln(OOPE + 1)")
-rupee_axis(ax, "y"); ax.legend(frameon=False, loc="lower right"); grid(ax); save(fig, "fig6_oope_by_stay")
+rupee_axis(ax, "y"); leg = ax.legend(frameon=False, loc="lower right", fontsize=8.5)
+for h in leg.legend_handles: h.set_alpha(1)            # show the point colours at full strength in the legend
+grid(ax); save(fig, "fig6_oope_by_stay")
 summary["stay_over_30_excluded_from_fig6_n"] = int((d["stay_days"] > 30).sum())
 for col in (0, 1):
     gg = dd[dd["facility_public"] == col]; fit = lowess(gg["log_oop"], gg["stay_days"], frac=.4, return_sorted=True)
