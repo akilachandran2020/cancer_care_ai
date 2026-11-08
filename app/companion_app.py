@@ -8,8 +8,17 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 companion = importlib.import_module("14_companion")
 
-st.set_page_config(page_title="AI Cancer Care Companion", page_icon="🩺", layout="centered")
-st.title("AI Cancer Care Companion")
+ASSETS = pathlib.Path(__file__).resolve().parent / "assets"
+LOGO, ICON = ASSETS / "cac_logo_light.png", ASSETS / "cac_icon_64.png"
+
+st.set_page_config(page_title="CAC: AI Cancer Care Companion", page_icon=str(ICON) if ICON.exists() else "🩺", layout="centered")
+if LOGO.exists():
+    if hasattr(st, "logo"):                       # header logo needs Streamlit >= 1.35
+        st.logo(str(LOGO), icon_image=str(ICON))
+    st.image(str(LOGO), width=360)
+    st.markdown("<h1 style='position:absolute;left:-9999px'>AI Cancer Care Companion</h1>", unsafe_allow_html=True)  # page title for screen readers
+else:
+    st.title("AI Cancer Care Companion")
 st.caption("Early cost range and financial-risk flag for a cancer hospitalization in India (prototype).")
 
 
