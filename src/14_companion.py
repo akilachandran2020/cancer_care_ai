@@ -1,4 +1,4 @@
-"""Step 14 - AI Cancer Care Companion prototype: core logic and command-line demo.
+"""Step 14 - CAC (Cancer Care AI Companion) prototype: core logic and command-line demo.
 
 Input   what is known when a family meets the hospital social worker or patient navigator (age, sex, urban/rural, hospital type,
         ward, expected length of stay, surgery planned, treatment outside the home district/state, scheme coverage, household

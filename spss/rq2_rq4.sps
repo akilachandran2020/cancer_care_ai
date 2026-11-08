@@ -1,5 +1,5 @@
 * Encoding: windows-1252.
-* AI Cancer Care Companion - SPSS syntax for design-based (survey-weighted) RQ2-RQ4.
+* CAC (Cancer Care AI Companion) - SPSS syntax for design-based (survey-weighted) RQ2-RQ4.
 * 1. Run src/04_export_for_spss.py (writes outputs/spss/*.sav).  2. Set the folder in FILE HANDLE below.
 * 3. Run > All.  Needs IBM SPSS Statistics 27 or later with the Complex Samples module.
 * Design: strata = NSS region x sector (stratum), clusters = first-stage units (psu), analysis weight = weight,

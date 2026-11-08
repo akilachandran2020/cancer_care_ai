@@ -1,4 +1,4 @@
-# AI Cancer Care Companion: predicting cancer treatment cost and financial risk (India)
+# CAC (Cancer Care AI Companion): predicting cancer treatment cost and financial risk (India)
 
 Predicts out-of-pocket expenditure (OOPE) and catastrophic health expenditure (CHE) risk for cancer
 hospitalisation episodes using the NSO 80th round (January-December 2025) health survey: 3,283 cancer
