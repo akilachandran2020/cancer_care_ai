@@ -1,4 +1,4 @@
-"""Streamlit front end for the AI Cancer Care Companion prototype.
+"""Streamlit front end for the Cancer Care AI Companion prototype.
 Run from the repository root:  streamlit run app/companion_app.py
 Needs models/companion_models.joblib (python src/11_final_models.py)."""
 import importlib, pathlib, sys
@@ -11,14 +11,14 @@ companion = importlib.import_module("14_companion")
 ASSETS = pathlib.Path(__file__).resolve().parent / "assets"
 LOGO, ICON = ASSETS / "cac_logo_light.png", ASSETS / "cac_icon_64.png"
 
-st.set_page_config(page_title="CAC: AI Cancer Care Companion", page_icon=str(ICON) if ICON.exists() else "🩺", layout="centered")
+st.set_page_config(page_title="CAC (Cancer Care AI Companion)", page_icon=str(ICON) if ICON.exists() else "🩺", layout="centered")
 if LOGO.exists():
     if hasattr(st, "logo"):                       # header logo needs Streamlit >= 1.35
         st.logo(str(LOGO), icon_image=str(ICON))
     st.image(str(LOGO), width=360)
-    st.markdown("<h1 style='position:absolute;left:-9999px'>AI Cancer Care Companion</h1>", unsafe_allow_html=True)  # page title for screen readers
+    st.markdown("<h1 style='position:absolute;left:-9999px'>Cancer Care AI Companion</h1>", unsafe_allow_html=True)  # page title for screen readers
 else:
-    st.title("AI Cancer Care Companion")
+    st.title("Cancer Care AI Companion")
 st.caption("Early cost range and financial-risk flag for a cancer hospitalization in India (prototype).")
 
 
